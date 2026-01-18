@@ -15,7 +15,7 @@ PARAMS={
     },
      'threshold':{
           'label': 'Threshold Score',
-          'min': 0, 'max': 100, 'step': 1, 'value': 60,
+          'min': 0, 'max': 100, 'step': 1, 'value': 80,
      }
 }
 

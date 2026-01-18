@@ -10,7 +10,7 @@ from .base_utils import load_data, get_animation_settings
 PARAMS = {
     'w': {
         'label': 'Weight (w)',
-        'min': 0.0, 'max': 5.0, 'step': 0.1, 'value': 0.5
+        'min': 0.0, 'max': 5.0, 'step': 0.1, 'value': 1
     }
 }
 
