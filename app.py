@@ -99,7 +99,7 @@ background_callback_manager = DiskcacheManager(cache)
 
 app = dash.Dash(__name__, background_callback_manager=background_callback_manager)
 app.title = "Nudging Simulation Lab"
-# server = app.server
+server = app.server
 
 # Layout
 app.layout = html.Div([
@@ -321,5 +321,5 @@ def run_simulation_callback(set_progress, n_clicks, strategy_name, n_rounds, par
     return html_content, info_content, info_card_style
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
  
