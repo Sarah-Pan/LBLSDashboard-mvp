@@ -1,0 +1,8 @@
+dash>=2.0.0
+pandas
+numpy
+scikit-learn
+plotly
+psutil
+dash[diskcache]
+gunicorn
