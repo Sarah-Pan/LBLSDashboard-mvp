@@ -10,7 +10,7 @@ from .base_utils import load_data, get_animation_settings
 # Parameters:
 PARAMS={
     'w': {
-        'label': 'Weight (w)',
+        'label': 'Weight ($w$)',
         'min': 0.0, 'max': 1.0, 'step': 0.01, 'value': 0.5
     },
      'threshold':{
@@ -89,6 +89,7 @@ def generate_visualization(y, nudged_history, pred_history, threshold=60, **kwar
     frames = []
     n_preds = len(pred_history)
     total_steps = n_preds + 1
+    frame_annotations = []
 
     for i in range(total_steps):
         curr_nudged = np.asarray(nudged_history[i]).ravel()[sort_idx] 
@@ -100,6 +101,19 @@ def generate_visualization(y, nudged_history, pred_history, threshold=60, **kwar
             curr_pred = np.asarray(pred_history[-1]).ravel()[sort_idx]
             title_text = f"Collapse Effect: Final Result (After {n_preds} Iterations)"
 
+            frame_annotations = [
+                dict(
+                    x=0.5, y=0.05,
+                    yanchor="bottom",
+                    xref="paper", yref="paper",
+                    text="<b>Pattern Detected:</b><br>"+
+                    "Red dots that start below the threshold drop sharply as students give up.<br>" + 
+                    "This crash in performance immediately pulls the subsequent blue prediction markers down with them.",
+                    showarrow=False,
+                    font=dict(size=16, color="darkblue")
+                )
+            ]
+
 
         frames.append(go.Frame(
             data=[
@@ -108,7 +122,9 @@ def generate_visualization(y, nudged_history, pred_history, threshold=60, **kwar
                 go.Scatter(x=x_axis, y=curr_nudged, mode='markers', marker=dict(color='red', size=8, opacity=0.8))
             ],
             name=str(i),
-            layout=go.Layout(title=title_text)
+            layout=go.Layout(
+                 title=title_text,
+                 annotations=frame_annotations)
         ))
     
     # Initial Data

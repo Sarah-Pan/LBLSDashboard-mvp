@@ -9,12 +9,12 @@ from .base_utils import load_data, get_animation_settings
 
 PARAMS = {
     'w': {
-        'label': 'Weight (w)',
+        'label': r'Weight ($w$)',
         'min': 0.0, 'max': 1.0, 'step': 0.01, 'value': 0.01
     },
     'threshold':{
-        'label': 'Threshold Rank',
-        'min': 50, 'max': 200, 'step': 10, 'value': 100,
+        'label': r'Threshold Rank ($\tau$)',
+        'min': 100, 'max': 200, 'step': 10, 'value': 100,
     }
 }
 
@@ -93,6 +93,7 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
     frames = []
     n_preds = len(pred_history)
     total_steps = n_preds + 1
+    frame_annotations = []
 
     for i in range(total_steps):
         curr_nudged = np.asarray(nudged_history[i]).ravel()[sort_idx] 
@@ -102,6 +103,19 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
         else:
             curr_pred = np.asarray(pred_history[-1]).ravel()[sort_idx]
             title_text = f"Rank Anxiety: Final Result (After {n_preds} Iterations)"
+
+            frame_annotations = [
+                dict(
+                    x=0.5, y=0.05,
+                    yanchor="bottom",
+                    xref="paper", yref="paper",
+                    text="<b>Pattern Detected:</b><br>"+
+                    "Lower-ranked red dots rise rapidly to catch up, pulling their blue predictions upward.<br>" + 
+                    "In contrast, high-ranked students stay still and are eventually overtaken by the rising group.",
+                    showarrow=False,
+                    font=dict(size=16, color="darkblue")
+                )
+            ]
 
         ranks = pd.Series(curr_pred).rank(ascending=False, method='min').values
         mask_safe = (ranks <= threshold_rank)
@@ -121,7 +135,9 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
                 go.Scatter(x=x_danger, y=nudged_danger)
             ],
             name=str(i),
-            layout=go.Layout(title=title_text)
+            layout=go.Layout(
+                title=title_text,
+                annotations=frame_annotations)
         ))
 
     initial_pred = np.asarray(pred_history[0]).ravel()[sort_idx]

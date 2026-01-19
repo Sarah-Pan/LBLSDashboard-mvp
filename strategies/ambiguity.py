@@ -9,7 +9,7 @@ from .base_utils import load_data, get_animation_settings
 
 PARAMS = {
     'w': {
-        'label': 'Weight (w)',
+        'label': 'Weight ($w$)',
         'min': 0.0, 'max': 5.0, 'step': 0.1, 'value': 1
     }
 }
@@ -107,13 +107,42 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
     n_preds = len(pred_history)
     total_steps = n_preds + 1
 
+    static_annotations = [
+        dict(
+            x=0.02, y=0.12, xref="paper", yref="paper",
+            text="Deep Green = High Clarity (Fast)",
+            showarrow=False,
+            font=dict(color="forestgreen", size=14, family="Arial Black")
+        ),
+        dict(
+            x=0.02, y=0.07, xref="paper", yref="paper",
+            text="Deep Red = High Ambiguity (Slow)",
+            showarrow=False,
+            font=dict(color="firebrick", size=14, family="Arial Black")
+        )
+    ]
+
     for i in range(total_steps):
+        current_annotations = static_annotations + []
         if i < n_preds:
             idx = i
             title_text = f"Ambiguity Aversion: Iteration {i}"
         else:
             idx = -1 
             title_text = f"Ambiguity Aversion: Final Result (After {n_preds} Iterations)"
+
+            current_annotations.append(
+                dict(
+                    x=0.5, y=0.2, 
+                    yanchor="bottom",
+                    xref="paper", yref="paper",
+                    text="<b>Pattern Detected:</b><br>"+
+                    "Deep green dots (clear predictions) rise quickly toward the top of the chart.<br>" + 
+                    "In contrast, deep red dots (uncertain predictions) get stuck and improve much slower.",
+                    showarrow=False,
+                    font=dict(size=16, color="darkblue", family="Arial") 
+                )
+            )
 
         curr_pred = np.asarray(pred_history[idx]).ravel()[sort_idx]
         curr_nudged = np.asarray(nudged_history[i]).ravel()[sort_idx]
@@ -147,7 +176,9 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
                 )
             ],
             name=str(i),
-            layout=go.Layout(title=title_text)
+            layout=go.Layout(
+                title=title_text,
+                annotations=current_annotations)
         ))
 
     init_pred = np.asarray(pred_history[0]).ravel()[sort_idx]

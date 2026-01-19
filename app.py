@@ -21,72 +21,104 @@ STRATEGY_MAP = {
 STRATEGY_INFO= {
     'moral':{
         'title': 'Concept: Moral Licensing',
-        'description': '''
-        **Effect:** Students reduces effort when prediction exceeds the goal.
+        'description': r'''
 
-        **Practical Example:** A student sees a predicted grade of 95 (above target 80) and relaxes, studying less.
+        **Formula:**  
+        $y_{t+1} = y_t - w [\hat{y}_t - y_{target}]_+$
+
+        **Effect:** Student reduces effort when prediction exceeds the goal.
+
+        **Example:** A student sees a predicted grade of 95 (above target 80) and relaxes, studying less.
 
         '''
     },
     'reactance':{
         'title': 'Concept: Psychological Reactance',
-        'description': '''
-        **Effect:** Students moves away from the prediction to assert autonomy.
+        'description': r'''
 
-        **Practical Example:** A student predicted to score 70 feels controlled and works extra hard to prove the model wrong, aiming for 90.
+        **Formula:**  
+        $y_{t+1} = y_t - w(\hat{y}_t - y_t)$
+
+        **Effect:** Student moves away from the prediction to assert autonomy.
+
+        **Example:** A student predicted to score 70 feels controlled and works extra hard to prove the model wrong, aiming for 90.
 
         '''
     },
     'anchor':{
         'title': 'Concept: Anchoring Effect',
-        'description': '''
-        **Effect:** Students subconsciously aligns actual performance with the prediction.
+        'description': r'''
 
-        **Practical Example:** A student predicted to score 85 gradually adjusts effort to match that expectation, even if initially aiming for 80.
+        **Formula:**  
+        $y_{t+1} = y_t + w(\hat{y}_t - y_t)$
+
+        **Effect:** Student subconsciously aligns actual performance with the prediction.
+
+        **Example:** A student predicted to score 85 gradually adjusts effort to match that expectation, even if initially aiming for 80.
     '''
     },
     'social':{
         'title': 'Concept: Social Proof',
-        'description': '''
-        **Effect:** Students adjusts performance to match predicted population average.
+        'description': r'''
 
-        **Practical Example:** A student sees most peers predicted at 90 and increases effort to align with the group norm.
+        **Formula:**  
+        $y_{t+1} = y_t + w(\overline{\hat{y}}_t - y_t)$
+
+        **Effect:** Student adjusts performance to match predicted population average.
+
+        **Example:** A student sees most peers predicted at 90 and increases effort to align with the group norm.
 
         '''
     },
     'collapse':{
         'title': 'Concept: Collapse Effect',
-        'description': '''
-        **Effect:** Students gives up when prediction falls below the critical threshold.
+        'description': r'''
 
-        **Practical Example:** A student predicted to score 50 (below passing threshold 60) feels hopeless and stops trying.
+        **Formula:**  
+        $y_{t+1} = y_t - w [\hat{y}_t - \theta]_-$
+
+        **Effect:** Student gives up when prediction falls below the critical threshold.
+
+        **Example:** A student predicted to score 50 (below passing threshold 60) feels hopeless and stops trying.
 
         '''
     },
     'stereo':{
         'title': 'Concept: Stereotype Threat',
-        'description': '''
+        'description': r'''
+
+        **Formula:**  
+        $y_{t+1} = y_t - w \cdot X_{bias} \cdot [y_t - \hat{y}_t]_+$
+
         **Effect:** Performance drops when minority agents feel underestimated.
 
-        **Practical Example:** A student from an underrepresented group sees a low predicted score and performs worse due to anxiety.
+        **Example:** A student from an underrepresented group sees a low predicted score and performs worse due to anxiety.
         
         '''
     },
     'rank':{
         'title': 'Concept: Rank Anxiety',
-        'description': '''
-        **Effect:** Students increases effort when predicted rank lags behind the threshold rank.
+        'description': r'''
 
-        **Practical Example:** A student predicted to rank 150th (threshold = 100) works harder to climb into the top 100.
+        **Formula:**  
+        $y_{t+1} = y_t + w [\hat{r} - \tau]_+$
+
+        **Effect:** Student increases effort when predicted rank behind an expected threshold ($\tau$, fixed for all). 
+
+        **Example:** A student predicted to rank 150th (threshold = 100) works harder to climb into the top 100.
 
         '''
     },
     'ambiguity':{
         'title': 'Concept: Ambiguity Aversion',
-        'description': '''
+        'description': r'''
+
+        **Formula:**  
+        $y_{t+1} = y_t + w \cdot \exp(-\sigma^2)$
+
         **Effect:** Student’s response decays as model uncertainty (variance) increases.
 
-        **Practical Example:** A student sees a prediction with high uncertainty (wide confidence interval) and hesitates to change study habits.
+        **Example:** A student sees a prediction with high uncertainty (wide confidence interval) and hesitates to change study habits.
 
         '''
     }
@@ -134,7 +166,10 @@ app.layout = html.Div([
         html.Div([
             html.H3(id='desc-title', className="card-title"),
             html.Hr(),
-            dcc.Markdown(id='desc-content', className="markdown-content")
+            dcc.Markdown(
+                id='desc-content', 
+                className="markdown-content",
+                mathjax = True)
         ], className="card description-card"),
 
         # Dynamic Parameter Inputs
@@ -231,7 +266,9 @@ def update_param_ui(strategy_name):
     for param_key, config in params_config.items():
         controls.append(
             html.Div([
-                html.Label(config.get('label', param_key), className="control-label"),
+                dcc.Markdown(config.get('label', param_key), 
+                           className="control-label",
+                           mathjax = True),
                 dcc.Slider(
                 id={'type': 'param-slider', 'index': param_key},
                 min=config['min'],

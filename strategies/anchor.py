@@ -9,7 +9,7 @@ from .base_utils import load_data, get_animation_settings
 
 PARAMS = {
     'w': {
-        'label': 'Weight (w)',
+        'label': 'Weight ($w$)',
         'min': 0.0, 'max': 1.0, 'step': 0.1, 'value': 0.1
     }
 }
@@ -82,6 +82,7 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
     frames = []
     n_preds = len(pred_history)
     total_steps = n_preds + 1
+    frame_annotations = []
 
     for i in range(total_steps):
         curr_nudged = np.asarray(nudged_history[i]).ravel()[sort_idx]
@@ -93,6 +94,19 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
             curr_pred = np.asarray(pred_history[-1]).ravel()[sort_idx]
             title_text = f"Anchoring Effect: Final Result (After {n_preds} Iterations)"
 
+            frame_annotations = [
+                dict(
+                    x=0.5, y=0.05,
+                    yanchor="bottom",
+                    xref="paper", yref="paper",
+                    text="<b>Pattern Detected:</b><br>"+
+                    "Red dots gravitate toward the blue prediction markers as if pulled by a magnet.<br>" + 
+                    "Eventually, the student performance (Red) and the predictions (Blue) almost completely overlap.",
+                    showarrow=False,
+                    font=dict(size=16, color="darkblue")
+                )
+            ]
+
         frames.append(go.Frame(
             data=[
                 go.Scatter(x=x_axis, y=y_sorted, mode='markers', marker=dict(color='grey', size=8, opacity=0.8)),
@@ -100,7 +114,9 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
                 go.Scatter(x=x_axis, y=curr_nudged, mode='markers', marker=dict(color='red', size=8, opacity=0.8))
             ],
             name=str(i),
-            layout=go.Layout(title=title_text)
+            layout=go.Layout(
+                 title=title_text,
+                 annotations=frame_annotations)
         ))
 
         # Initial Data

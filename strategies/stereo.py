@@ -9,7 +9,7 @@ from .base_utils import load_data, get_animation_settings
 
 PARAMS = {
     'w': {
-        'label': 'Weight (w)',
+        'label': 'Weight ($w$)',
         'min': 0.0, 'max': 1.0, 'step': 0.01, 'value': 0.5
     },
     'threshold':{
@@ -145,12 +145,17 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
     mask_risk = (x_bias_sorted == 1)
     mask_safe = (x_bias_sorted == 0)
 
+    x_risk = x_axis[mask_risk]
+    x_safe = x_axis[mask_safe]
+
     frames = []
     n_preds = len(pred_history)
     total_steps = n_preds + 1
     
     for i in range(total_steps):
         curr_nudged = np.asarray(nudged_history[i]).ravel()[sort_idx]
+
+        frame_annotations = []
 
         if i < n_preds:
             curr_pred = np.asarray(pred_history[i]).ravel()[sort_idx]
@@ -159,25 +164,43 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
             curr_pred = np.asarray(pred_history[-1]).ravel()[sort_idx]
             title_text = f"Stereotype Threat: Final Result (After {n_preds} Iterations)"
 
+            frame_annotations = [
+                dict(
+                    x=0.5, y=0.05,
+                    yanchor="bottom",
+                    xref="paper", yref="paper",
+                    text="<b>Pattern Detected:</b><br>The Risk Group (triangles) drops significantly below their blue prediction markers.<br>" +
+                    "Meanwhile, the Safe Group (circles) remains stable or rises slightly.<br>",
+                    showarrow=False,
+                    font=dict(size=16, color="darkblue")
+                )
+            ]
+
+        pred_risk = curr_pred[mask_risk]
+        pred_safe = curr_pred[mask_safe]
+        
         nudged_risk = curr_nudged[mask_risk]
         nudged_safe = curr_nudged[mask_safe]
-        
-        x_risk = x_axis[mask_risk]
-        x_safe = x_axis[mask_safe]
 
         frames.append(go.Frame(
             data=[
                 go.Scatter(x=x_axis, y=y_sorted), 
-                go.Scatter(x=x_axis, y=curr_pred),
+                go.Scatter(x=x_safe, y=pred_safe),
+                go.Scatter(x=x_risk, y=pred_risk),
                 go.Scatter(x=x_safe, y=nudged_safe),
                 go.Scatter(x=x_risk, y=nudged_risk)
             ],
             name=str(i),
-            layout=go.Layout(title=title_text)
+            layout=go.Layout(
+                title=title_text,
+                annotations=frame_annotations)
         ))
 
     initial_pred = np.asarray(pred_history[0]).ravel()[sort_idx]
     initial_nudged = np.asarray(nudged_history[0]).ravel()[sort_idx]
+    
+    initial_pred_risk = initial_pred[mask_risk]
+    initial_pred_safe = initial_pred[mask_safe]
     
     initial_nudged_risk = initial_nudged[mask_risk]
     initial_nudged_safe = initial_nudged[mask_safe]
@@ -197,9 +220,10 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
     fig = go.Figure(
         data=[
             go.Scatter(x=x_axis, y=y_sorted, mode='markers', name='Original Score', marker=dict(color='lightgrey', size=6, opacity=0.5)),
-            go.Scatter(x=x_axis, y=initial_pred, mode='markers', name='Prediction', marker=dict(color='blue', size=8, opacity=0.6)),
-            go.Scatter(x=x_safe, y=initial_nudged_safe, mode='markers', name='Safe Group', marker=dict(color='orange', size=6, opacity=0.3)),
-            go.Scatter(x=x_risk, y=initial_nudged_risk, mode='markers', name='Risk Group (Target)', marker=dict(color='red', symbol='triangle-up', size=10, opacity=1.0, line=dict(width=1, color='darkred')))
+            go.Scatter(x=x_safe, y=initial_pred_safe, mode='markers', name='Prediction (Safe)', marker=dict(color='blue', size=8, opacity=0.3)),
+            go.Scatter(x=x_risk, y=initial_pred_risk, mode='markers', name='Prediction (Risk)', marker=dict(color='blue', symbol='triangle-up', size=10, opacity=0.6, line=dict(width=1, color='darkblue'))),
+            go.Scatter(x=x_safe, y=initial_nudged_safe, mode='markers', name='Nudged y (Safe)', marker=dict(color='orange', size=6, opacity=0.3)),
+            go.Scatter(x=x_risk, y=initial_nudged_risk, mode='markers', name='Nudged y (Risk)', marker=dict(color='red', symbol='triangle-up', size=10, opacity=1.0, line=dict(width=1, color='darkred')))
         ],
         layout=go.Layout(
             width=1000, 
