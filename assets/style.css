@@ -193,6 +193,8 @@ body {
 }
 .description-card {
     border-left: 5px solid #3498db;
+    overflow-x: auto;
+
 }
 
 .markdown-content {
@@ -215,3 +217,4 @@ body {
 .card-title{
     color: darkslategray !important;
 }
+
