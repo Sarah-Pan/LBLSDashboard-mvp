@@ -77,17 +77,12 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=5, **kwargs
         else:
             variance_norm = np.zeros_like(cv_preds_var)
             
-        original_boost = w * np.exp(-variance_norm)
+        boost = w * np.exp(-variance_norm)
         if use_noise:
-            noisy_boost = np.random.normal(loc=original_boost, scale=0.5, size=len(y))
-            if w >= 0:
-                boost = np.maximum(0, noisy_boost)
-            else:
-                boost = np.minimum(0, noisy_boost)
+            noise = np.random.normal(loc=0, scale=0.1, size=len(y))
         else:
-            boost = original_boost
-
-        new_y_values = np.clip(current_y + boost, 1, 100)
+            noise = 0
+        new_y_values = np.clip(current_y + boost + noise, 1, 100)
         
         current_y = pd.Series(new_y_values, index=y.index)
         nudged_history.append(current_y.copy())

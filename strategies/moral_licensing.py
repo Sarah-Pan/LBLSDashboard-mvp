@@ -66,17 +66,15 @@ def run_simulation(n_rounds=5, n_splits=5, w=0.5, threshold=80, progress_callbac
         gap = np.maximum(0, all_preds - threshold)
         
         # Slacking off amount
-        original_decay = w * gap
+        decay = w * gap
 
         if use_noise:
-             noise_decay = np.random.normal(loc=original_decay, scale=0.5, size=len(y))
-             mask_effect = (original_decay > 0)
-             decay = np.zeros_like(original_decay)
-             decay[mask_effect] = np.maximum(0, noise_decay[mask_effect])
+            noise = np.random.normal(loc=0, scale=0.1, size=len(y))
         else:
-             decay = original_decay        
+            noise = 0
+
         # nudged y 
-        new_y_values = current_y - decay
+        new_y_values = current_y - decay + noise
         new_y_values = np.clip(new_y_values, 1, 100)
         
         # update current_y

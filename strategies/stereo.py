@@ -238,18 +238,15 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.5, thresh
         gap = np.maximum(0, current_y - all_preds)
 
         # Slacking off amount
-        original_decay = w * x_bias * gap
+        decay = w * x_bias * gap
 
         if use_noise:
-            noisy_decay = np.random.normal(loc=original_decay, scale=0.5, size=len(y))
-            mask_effect = (original_decay > 0)
-            decay = np.zeros_like(original_decay)
-            decay[mask_effect] = np.maximum(0, noisy_decay[mask_effect])
+            noise = np.random.normal(loc=0, scale=0.1, size=len(y))
         else:
-            decay = original_decay
+            noise = 0
 
         # nudged y
-        new_y_values = current_y - decay
+        new_y_values = current_y - decay + noise
 
         new_y_values = np.clip(new_y_values, 1, 100)
         

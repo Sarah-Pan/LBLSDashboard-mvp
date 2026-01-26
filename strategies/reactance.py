@@ -59,20 +59,15 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.5, **kwar
         gap = all_preds - current_y
 
         # reactance effect
-        original_reaction = w * gap
+        reaction = w * gap
 
         if use_noise:
-             noisy_reaction = np.random.normal(loc=original_reaction, scale=0.5, size=len(y))
-             reaction = np.where(
-                gap > 0, 
-                np.maximum(0, noisy_reaction), 
-                np.minimum(0, noisy_reaction)
-            )
+            noise = np.random.normal(loc=0, scale=0.1, size=len(y))
         else:
-             reaction = original_reaction
+            noise = 0
         
         # nudged y 
-        new_y_values = current_y - reaction
+        new_y_values = current_y - reaction + noise
 
         new_y_values = np.clip(new_y_values, 1, 100)
         

@@ -69,19 +69,16 @@ def run_simulation(n_rounds=5, n_splits=5, w=0.5, threshold=100, progress_callba
         gap = np.maximum(0, predicted_ranks - threshold)
         
         # Boost amount
-        original_boost = w * gap
+        boost = w * gap
 
         if use_noise:
-            noisy_boost = np.random.normal(loc=original_boost, scale=0.5, size=len(y))
-            mask_effect = (original_boost > 0)
-            boost = np.zeros_like(original_boost)
-            boost[mask_effect] = np.maximum(0, noisy_boost[mask_effect])
+            noise = np.random.normal(loc=0, scale=0.1, size=len(y))
         else:
-            boost = original_boost
+            noise = 0
 
 
         # nudged y
-        new_y_values = current_y + boost
+        new_y_values = current_y + boost + noise
         new_y_values = np.clip(new_y_values, 1, 100)
         
         # update current_y
