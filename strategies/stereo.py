@@ -7,7 +7,151 @@ from sklearn.metrics import mean_squared_error
 
 from .base_utils import load_data, get_animation_settings
 
-PARAMS = {
+
+CONSTRUCTS_DB = {
+    # === SILL (Language Learning Strategies) ===
+    # correlation r: -0.004 (Negative) -> Risk
+    'memory': {
+        'name': 'Memory Strategies',
+        'columns': ['s_1', 's_2', 's_3', 's_4', 's_5', 's_6', 's_7', 's_8'],
+        'higher_is_risk': True
+    },
+    # correlation r: 0.089 (Positive) -> Safe
+    'cognitive': {
+        'name': 'Cognitive Strategies',
+        'columns': ['s_9', 's_10', 's_11', 's_12', 's_13', 's_14', 's_15', 's_16', 's_17', 's_18', 's_19', 's_20', 's_21'],
+        'higher_is_risk': False
+    },
+    # correlation r: 0.062 (Positive) -> Safe
+    'compensation': {
+        'name': 'Compensation Strategies',
+        'columns': ['s_22', 's_23', 's_24', 's_25', 's_26', 's_27'],
+        'higher_is_risk': False
+    },
+    # correlation r: -0.046 (Negative) -> Risk
+    'metacognitive': {
+        'name': 'Metacognitive Strategies',
+        'columns': ['s_28', 's_29', 's_30', 's_31', 's_32', 's_33', 's_34', 's_35', 's_36'],
+        'higher_is_risk': True
+    },
+    # correlation r: -0.116 (Negative) -> Risk
+    'affective': {
+        'name': 'Affective Strategies',
+        'columns': ['s_37', 's_38', 's_39', 's_40', 's_41', 's_42'],
+        'higher_is_risk': True
+    },
+    # correlation r: -0.096 (Negative) -> Risk
+    'social': {
+        'name': 'Social Strategies',
+        'columns': ['s_43', 's_44', 's_45', 's_46', 's_47', 's_48'],
+        'higher_is_risk': True
+    },
+
+    # === MSLQ (Motivated Strategies for Learning) ===
+    # correlation r: 0.122 (Positive) -> Safe
+    'rehearsal': {
+        'name': 'Rehearsal',
+        'columns': ['srl_s_1', 'srl_s_2', 'srl_s_3', 'srl_s_4'],
+        'higher_is_risk': False
+    },
+    # correlation r: 0.253 (Positive) -> Safe
+    'elaboration': {
+        'name': 'Elaboration',
+        'columns': ['srl_s_5', 'srl_s_6', 'srl_s_7', 'srl_s_8', 'srl_s_9', 'srl_s_10'],
+        'higher_is_risk': False
+    },
+    # correlation r: 0.118 (Positive) -> Safe
+    'organization': {
+        'name': 'Organization',
+        'columns': ['srl_s_11', 'srl_s_12', 'srl_s_13', 'srl_s_14'],
+        'higher_is_risk': False
+    },
+    # correlation r: 0.139 (Positive) -> Safe
+    'critical_thinking': {
+        'name': 'Critical Thinking',
+        'columns': ['srl_s_15', 'srl_s_16', 'srl_s_17', 'srl_s_18', 'srl_s_19'],
+        'higher_is_risk': False
+    },
+    # correlation r: 0.188 (Positive) -> Safe
+    'metacognitive_self_regulation': {
+        'name': 'Metacognitive Self-Regulation',
+        'columns': ['srl_s_20','srl_s_21','srl_s_22','srl_s_23','srl_s_24','srl_s_25','srl_s_26','srl_s_27','srl_s_28','srl_s_29','srl_s_30','srl_s_31','srl_s_32','srl_s_33','srl_s_34','srl_s_35','srl_s_36','srl_s_37','srl_s_38','srl_s_39'],
+        'higher_is_risk': False
+    },
+    # correlation r: 0.034 (Positive) -> Safe
+    'effort_regulation': {
+        'name': 'Effort Regulation',
+        'columns': ['srl_s_40', 'srl_s_41', 'srl_s_42', 'srl_s_43'],
+        'higher_is_risk': False
+    },
+    # correlation r: 0.107 (Positive) -> Safe
+    'peer_learning': {
+        'name': 'Peer Learning',
+        'columns': ['srl_s_44', 'srl_s_45', 'srl_s_46'],
+        'higher_is_risk': False
+    },
+    # correlation r: 0.054 (Positive) -> Safe
+    'help_seeking': {
+        'name': 'Help Seeking',
+        'columns': ['srl_s_47','srl_s_48', 'srl_s_49', 'srl_s_50'],
+        'higher_is_risk': False
+    },
+    # correlation r: 0.140 (Positive) -> Safe
+    'intrinsic_goal': {
+        'name': 'Intrinsic Goal Orientation',
+        'columns': ['srl_m_1', 'srl_m_2', 'srl_m_3', 'srl_m_4'],
+        'higher_is_risk': False
+    },
+    # correlation r: 0.172 (Positive) -> Safe
+    'extrinsic_goal': {
+        'name': 'Extrinsic Goal Orientation',
+        'columns': ['srl_m_5', 'srl_m_6', 'srl_m_7', 'srl_m_8'],
+        'higher_is_risk': False
+    },
+    # correlation r: 0.254 (Positive) -> Safe
+    'task_value': {
+        'name': 'Task Value',
+        'columns': ['srl_m_9', 'srl_m_10', 'srl_m_11', 'srl_m_12', 'srl_m_13', 'srl_m_14'],
+        'higher_is_risk': False
+    },
+    # correlation r: 0.222 (Positive) -> Safe
+    'control_beliefs': {
+        'name': 'Control Beliefs',
+        'columns': ['srl_m_15', 'srl_m_16', 'srl_m_17', 'srl_m_18'],
+        'higher_is_risk': False
+    },
+    # correlation r: 0.401 (Positive) -> Safe
+    'self_efficacy': {
+        'name': 'Self-Efficacy',
+        'columns': ['srl_m_19','srl_m_20','srl_m_21','srl_m_22','srl_m_23','srl_m_24','srl_m_25','srl_m_26'],
+        'higher_is_risk': False
+    },
+    # correlation r: -0.230 (Negative) -> Risk
+    'test_anxiety': {
+        'name': 'Test Anxiety',
+        'columns': ['srl_m_27', 'srl_m_28', 'srl_m_29', 'srl_m_30', 'srl_m_31'],
+        'higher_is_risk': True
+    }
+}
+
+PARAMS = {'use_noise': {
+        'type': 'radio',
+        'label': 'Random Variation (Noise)',
+        'value': False, 
+        'options': [
+            {'label': 'Off', 'value': False},
+            {'label': 'On', 'value': True}
+        ]
+    },
+    'construct_selector': {
+        'type': 'dropdown',           
+        'label': 'Select Risk Factor',
+        'value': 'test_anxiety',       
+        'options': [              
+            {'label': info['name'], 'value': key} 
+            for key, info in CONSTRUCTS_DB.items()
+        ]
+    },
     'w': {
         'label': 'Weight ($w$)',
         'min': 0.0, 'max': 1.0, 'step': 0.01, 'value': 0.5
@@ -17,20 +161,6 @@ PARAMS = {
         'min': 10, 'max': 90, 'step': 10, 'value': 30,
     }
 }
-
-CONSTRUCTS_DB ={
-    'test_anxiety':{
-        'name':'Test Anxiety',
-        'columns':['srl_m_27', 'srl_m_28', 'srl_m_29', 'srl_m_30', 'srl_m_31'],
-        'higher_is_risk': True
-    }
-}
-
-ACTIVE_KEY = 'test_anxiety'
-
-# Get current construct configuration
-def get_current_config():
-    return CONSTRUCTS_DB.get(ACTIVE_KEY, list(CONSTRUCTS_DB.values())[0])
 
 def cal_construct_score(X, config):
     cols = config['columns']
@@ -63,7 +193,8 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.5, thresh
     X, y = load_data()
 
     # Get construct configuration
-    config = get_current_config()
+    construct_key = kwargs.get('construct_selector', 'test_anxiety')
+    config = CONSTRUCTS_DB.get(construct_key, CONSTRUCTS_DB['test_anxiety'])
 
     # calculate construct scores
     construct_scores = cal_construct_score(X, config)
@@ -75,6 +206,7 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.5, thresh
     pred_history = []
     nudged_history = []
     log_messages = []
+    use_noise = kwargs.get('use_noise', False)
 
     if config['higher_is_risk']:
         risk_desc = f"Top {threshold}%"
@@ -106,7 +238,15 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.5, thresh
         gap = np.maximum(0, current_y - all_preds)
 
         # Slacking off amount
-        decay = w * x_bias * gap
+        original_decay = w * x_bias * gap
+
+        if use_noise:
+            noisy_decay = np.random.normal(loc=original_decay, scale=0.5, size=len(y))
+            mask_effect = (original_decay > 0)
+            decay = np.zeros_like(original_decay)
+            decay[mask_effect] = np.maximum(0, noisy_decay[mask_effect])
+        else:
+            decay = original_decay
 
         # nudged y
         new_y_values = current_y - decay
@@ -130,7 +270,8 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.5, thresh
 
 def generate_visualization(y, nudged_history, pred_history, **kwargs):
     X, _ = load_data()
-    config = get_current_config()
+    construct_key = kwargs.get('construct_selector', 'test_anxiety')
+    config = CONSTRUCTS_DB.get(construct_key, CONSTRUCTS_DB['test_anxiety'])
     threshold = kwargs.get('threshold', 30)
     
     construct_scores = cal_construct_score(X, config)

@@ -8,6 +8,15 @@ from sklearn.metrics import mean_squared_error
 from .base_utils import load_data, get_animation_settings
 
 PARAMS = {
+    'use_noise': {
+        'type': 'radio',
+        'label': 'Random Variation (Noise)',
+        'value': False, 
+        'options': [
+            {'label': 'Off', 'value': False},
+            {'label': 'On', 'value': True}
+        ]
+    },
     'w': {
         'label': r'Weight ($w$)',
         'min': 0.0, 'max': 1.0, 'step': 0.01, 'value': 0.01
@@ -34,6 +43,7 @@ def run_simulation(n_rounds=5, n_splits=5, w=0.5, threshold=100, progress_callba
     pred_history = []
     nudged_history = []
     log_messages = []
+    use_noise = kwargs.get('use_noise', False)
     
     # record initial y 
     nudged_history.append(current_y.copy())
@@ -59,7 +69,16 @@ def run_simulation(n_rounds=5, n_splits=5, w=0.5, threshold=100, progress_callba
         gap = np.maximum(0, predicted_ranks - threshold)
         
         # Boost amount
-        boost = w * gap
+        original_boost = w * gap
+
+        if use_noise:
+            noisy_boost = np.random.normal(loc=original_boost, scale=0.5, size=len(y))
+            mask_effect = (original_boost > 0)
+            boost = np.zeros_like(original_boost)
+            boost[mask_effect] = np.maximum(0, noisy_boost[mask_effect])
+        else:
+            boost = original_boost
+
 
         # nudged y
         new_y_values = current_y + boost
@@ -110,8 +129,8 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
                     yanchor="bottom",
                     xref="paper", yref="paper",
                     text="<b>Pattern Detected:</b><br>"+
-                    "Lower-ranked red dots rise rapidly to catch up, pulling their blue predictions upward.<br>" + 
-                    "In contrast, high-ranked students stay still and are eventually overtaken by the rising group.",
+                    "Predicted lower-rank students (red dots) rise rapidly to catch up, pulling their blue predictions upward.<br>" + 
+                    "In contrast, Predicted top 100 students (yellow dots) stay still and are eventually overtaken by the rising group.",
                     showarrow=False,
                     font=dict(size=16, color="darkblue")
                 )
@@ -167,16 +186,18 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
 
     fig = go.Figure(
         data=[
-            go.Scatter(x=x_axis, y=y_sorted, mode='markers', name='Original', marker=dict(color='lightgrey', size=6, opacity=0.3)),
+            go.Scatter(x=x_axis, y=y_sorted, mode='markers', name='Original', marker=dict(color='lightgrey', size=6, opacity=0.8)),
             go.Scatter(x=x_axis, y=initial_pred, mode='markers', name='Prediction', marker=dict(color='blue', size=8, opacity=0.3)),
-            go.Scatter(x=x_safe_init, y=nudged_safe_init, mode='markers', name=f'Top {threshold_rank} (Safe)', marker=dict(    color='gold',     size=10,     opacity=1.0,    line=dict(width=1, color='yellow'))),
-            go.Scatter(x=x_danger_init, y=nudged_danger_init, mode='markers', name='Behind (Boosting)', marker=dict(color='red', size=8, opacity=0.9))
+            go.Scatter(x=x_safe_init, y=nudged_safe_init, mode='markers', name=f'Predicted Top {threshold_rank} (Safe)', marker=dict(    color='gold',     size=10,     opacity=1.0,    line=dict(width=1, color='yellow'))),
+            go.Scatter(x=x_danger_init, y=nudged_danger_init, mode='markers', name='Predicted Behind (Boosting)', marker=dict(color='red', size=8, opacity=0.9))
         ],
         layout=go.Layout(
             width=1000, height=650, autosize=True,
             title="Rank Anxiety Iteration 0 (Initial State)",
             xaxis=dict(title="Student Index (Sorted by Prediction)", range=[0, len(y)]),
             yaxis=dict(title="Score", range=[0, 105]),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
             **common_layout
         ),
         frames=frames

@@ -8,6 +8,15 @@ from sklearn.metrics import mean_squared_error
 from .base_utils import load_data, get_animation_settings
 
 PARAMS = {
+     'use_noise': {
+        'type': 'radio',
+        'label': 'Random Variation (Noise)',
+        'value': False, 
+        'options': [
+            {'label': 'Off', 'value': False},
+            {'label': 'On', 'value': True}
+        ]
+    },
     'w': {
         'label': 'Weight ($w$)',
         'min': 0.0, 'max': 1.0, 'step': 0.01, 'value': 0.05
@@ -29,6 +38,7 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.1, **kwar
     pred_history = []
     nudged_history = []
     log_messages = []
+    use_noise = kwargs.get('use_noise', False)
     
     # record initial y 
     nudged_history.append(current_y.copy())
@@ -50,7 +60,17 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.1, **kwar
         gap = mean_pred - current_y
 
         # reactance effect
-        reaction = w * gap
+        original_reaction = w * gap
+
+        if use_noise:
+             noise = np.random.normal(loc=original_reaction, scale=2.0, size=len(y))
+             reaction = np.where(
+                 gap > 0,
+                 np.maximum(0, noise),
+                 np.minimum(0, noise)
+             )
+        else:
+             reaction = original_reaction
         
         # nudged y 
         new_y_values = current_y + reaction

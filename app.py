@@ -23,12 +23,12 @@ STRATEGY_INFO= {
         'title': 'Concept: Moral Licensing',
         'description': r'''
 
-        **Formula:**  
-        $y_{t+1} = y_t - w [\hat{y}_t - y_{target}]_+$
-
         **Effect:** Student reduces effort when prediction exceeds the goal.
 
         **Example:** A student sees a predicted grade of 95 (above target 80) and relaxes, studying less.
+
+        **Formula for Iteration t+1:**  
+        $y_{t+1} = y_t - w [\hat{y}_t - y_{target}]_+  + \mathcal{E}_{noise}$
 
         '''
     },
@@ -36,12 +36,12 @@ STRATEGY_INFO= {
         'title': 'Concept: Psychological Reactance',
         'description': r'''
 
-        **Formula:**  
-        $y_{t+1} = y_t - w(\hat{y}_t - y_t)$
-
         **Effect:** Student moves away from the prediction to assert autonomy.
 
         **Example:** A student predicted to score 70 feels controlled and works extra hard to prove the model wrong, aiming for 90.
+
+        **Formula for Iteration t+1:**  
+        $y_{t+1} = y_t - w(\hat{y}_t - y_t) + \mathcal{E}_{noise}$
 
         '''
     },
@@ -49,24 +49,24 @@ STRATEGY_INFO= {
         'title': 'Concept: Anchoring Effect',
         'description': r'''
 
-        **Formula:**  
-        $y_{t+1} = y_t + w(\hat{y}_t - y_t)$
-
         **Effect:** Student subconsciously aligns actual performance with the prediction.
 
         **Example:** A student predicted to score 85 gradually adjusts effort to match that expectation, even if initially aiming for 80.
+
+        **Formula for Iteration t+1:**  
+        $y_{t+1} = y_t + w(\hat{y}_t - y_t) + \mathcal{E}_{noise}$
     '''
     },
     'social':{
         'title': 'Concept: Social Proof',
         'description': r'''
 
-        **Formula:**  
-        $y_{t+1} = y_t + w(\overline{\hat{y}}_t - y_t)$
-
         **Effect:** Student adjusts performance to match predicted population average.
 
         **Example:** A student sees most peers predicted at 90 and increases effort to align with the group norm.
+
+         **Formula for Iteration t+1:**  
+        $y_{t+1} = y_t + w(\overline{\hat{y}}_t - y_t) + \mathcal{E}_{noise}$
 
         '''
     },
@@ -74,12 +74,12 @@ STRATEGY_INFO= {
         'title': 'Concept: Collapse Effect',
         'description': r'''
 
-        **Formula:**  
-        $y_{t+1} = y_t - w [\hat{y}_t - \theta]_-$
-
         **Effect:** Student gives up when prediction falls below the critical threshold.
 
         **Example:** A student predicted to score 50 (below passing threshold 60) feels hopeless and stops trying.
+
+        **Formula for Iteration t+1:**  
+        $y_{t+1} = y_t - w [\hat{y}_t - \theta]_- + \mathcal{E}_{noise}$
 
         '''
     },
@@ -87,12 +87,12 @@ STRATEGY_INFO= {
         'title': 'Concept: Stereotype Threat',
         'description': r'''
 
-        **Formula:**  
-        $y_{t+1} = y_t - w \cdot X_{bias} \cdot [y_t - \hat{y}_t]_+$
-
         **Effect:** Performance drops when minority agents feel underestimated.
 
         **Example:** A student from an underrepresented group sees a low predicted score and performs worse due to anxiety.
+
+        **Formula for Iteration t+1:**  
+        $y_{t+1} = y_t - w \cdot X_{bias} \cdot [y_t - \hat{y}_t]_+ + \mathcal{E}_{noise}$
         
         '''
     },
@@ -100,25 +100,26 @@ STRATEGY_INFO= {
         'title': 'Concept: Rank Anxiety',
         'description': r'''
 
-        **Formula:**  
-        $y_{t+1} = y_t + w [\hat{r} - \tau]_+$
-
         **Effect:** Student increases effort when predicted rank behind an expected threshold ($\tau$, fixed for all). 
 
         **Example:** A student predicted to rank 150th (threshold = 100) works harder to climb into the top 100.
+
+        **Formula for Iteration t+1:**  
+        $y_{t+1} = y_t + w [\hat{r} - \tau]_+ + \mathcal{E}_{noise}$
 
         '''
     },
     'ambiguity':{
         'title': 'Concept: Ambiguity Aversion',
         'description': r'''
-
-        **Formula:**  
-        $y_{t+1} = y_t + w \cdot \exp(-\sigma^2)$
-
+        
         **Effect:** Student’s response decays as model uncertainty (variance) increases.
 
-        **Example:** A student sees a prediction with high uncertainty (wide confidence interval) and hesitates to change study habits.
+        **Example:** A student sees a prediction with high uncertainty (wide prediction interval) and hesitates to change study habits.
+
+        **Formula for Iteration t+1:**  
+        $y_{t+1} = y_t + w \cdot \exp(-\sigma^2) + \mathcal{E}_{noise}$
+
 
         '''
     }
@@ -131,7 +132,7 @@ background_callback_manager = DiskcacheManager(cache)
 
 app = dash.Dash(__name__, background_callback_manager=background_callback_manager)
 app.title = "Nudging Simulation Lab"
-server = app.server
+# server = app.server
 
 # Layout
 app.layout = html.Div([
@@ -264,22 +265,53 @@ def update_param_ui(strategy_name):
     
     controls = []
     for param_key, config in params_config.items():
-        controls.append(
-            html.Div([
-                dcc.Markdown(config.get('label', param_key), 
-                           className="control-label",
-                           mathjax = True),
-                dcc.Slider(
+        param_type = config.get('type', 'slider')
+        label_component = dcc.Markdown(
+            config.get('label', param_key), 
+            className="control-label",
+            mathjax=True,
+            style={'marginBottom': '5px', 'fontWeight': 'bold'}
+        )
+
+        if param_type == 'dropdown':
+            input_component = dcc.Dropdown(
+                id={'type': 'param-slider', 'index': param_key}, 
+                options=config.get('options', []),
+                value=config.get('value'),
+                clearable=False,
+                style={'color': '#333'}
+            )
+        
+        elif param_type == 'radio':
+            input_component = dcc.RadioItems(
+                id={'type': 'param-slider', 'index': param_key},
+                options=config.get('options', []),
+                value=config.get('value'),
+                inline=True,
+                labelStyle={'marginRight': '20px', 'cursor': 'pointer'},
+                style={'paddingLeft': '12px','marginTop': '5px'}
+            )
+
+        else:
+            input_component = dcc.Slider(
                 id={'type': 'param-slider', 'index': param_key},
                 min=config['min'],
                 max=config['max'],
                 step=config['step'],
                 value=config['value'],
-                marks={i: str(i) for i in range(int(config['min']), int(config['max'])+1, 10)} if config['max'] > 10 else None,
+                marks={i: str(i) for i in range(int(config['min']), int(config['max'])+1, 10)} 
+                      if config.get('max', 100) > 10 else None,
                 tooltip={"placement": "bottom", "always_visible": True}
-                ),
-            html.Br()
-            ]))
+            )
+
+        controls.append(
+            html.Div([
+                label_component,
+                input_component,
+                html.Br(),
+                html.Br()
+            ])
+        )
     return controls
 
 # Callback: Run simulation and update visualization
@@ -358,5 +390,5 @@ def run_simulation_callback(set_progress, n_clicks, strategy_name, n_rounds, par
     return html_content, info_content, info_card_style
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
  

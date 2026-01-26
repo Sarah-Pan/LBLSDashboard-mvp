@@ -8,7 +8,16 @@ from sklearn.metrics import mean_squared_error
 from .base_utils import load_data, get_animation_settings
 
 # Parameters:
-PARAMS={'w': {
+PARAMS={'use_noise': {
+        'type': 'radio',
+        'label': 'Random Variation (Noise)',
+        'value': False, 
+        'options': [
+            {'label': 'Off', 'value': False},
+            {'label': 'On', 'value': True}
+        ]
+    },
+     'w': {
         'label': r'Weight ($w$)',
         'min': 0.0, 'max': 1.0, 'step': 0.01, 'value': 0.5
     },
@@ -34,6 +43,7 @@ def run_simulation(n_rounds=5, n_splits=5, w=0.5, threshold=80, progress_callbac
     pred_history = []
     nudged_history = []
     log_messages = []
+    use_noise = kwargs.get('use_noise', False)
     
     # record initial y 
     nudged_history.append(current_y.copy())
@@ -56,8 +66,15 @@ def run_simulation(n_rounds=5, n_splits=5, w=0.5, threshold=80, progress_callbac
         gap = np.maximum(0, all_preds - threshold)
         
         # Slacking off amount
-        decay = w * gap
-        
+        original_decay = w * gap
+
+        if use_noise:
+             noise_decay = np.random.normal(loc=original_decay, scale=0.5, size=len(y))
+             mask_effect = (original_decay > 0)
+             decay = np.zeros_like(original_decay)
+             decay[mask_effect] = np.maximum(0, noise_decay[mask_effect])
+        else:
+             decay = original_decay        
         # nudged y 
         new_y_values = current_y - decay
         new_y_values = np.clip(new_y_values, 1, 100)

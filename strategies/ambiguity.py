@@ -8,9 +8,18 @@ from sklearn.metrics import mean_squared_error
 from .base_utils import load_data, get_animation_settings
 
 PARAMS = {
+    'use_noise': {
+        'type': 'radio',
+        'label': 'Random Variation (Noise)',
+        'value': False, 
+        'options': [
+            {'label': 'Off', 'value': False},
+            {'label': 'On', 'value': True}
+        ]
+    },
     'w': {
         'label': 'Weight ($w$)',
-        'min': 0.0, 'max': 5.0, 'step': 0.1, 'value': 1
+        'min': -5, 'max': 5.0, 'step': 0.5, 'value': 1
     }
 }
 
@@ -30,7 +39,8 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=5, **kwargs
     nudged_history = [current_y.copy()]
     pred_history = []
     log_messages = []
-    var_history = [] 
+    var_history = []
+    use_noise = kwargs.get('use_noise', False) 
 
     # we need manually implement CV to get variance from individual trees
     for t in range(n_rounds):
@@ -67,14 +77,20 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=5, **kwargs
         else:
             variance_norm = np.zeros_like(cv_preds_var)
             
-        boost = w * np.exp(-variance_norm)
+        original_boost = w * np.exp(-variance_norm)
+        if use_noise:
+            noisy_boost = np.random.normal(loc=original_boost, scale=0.5, size=len(y))
+            if w >= 0:
+                boost = np.maximum(0, noisy_boost)
+            else:
+                boost = np.minimum(0, noisy_boost)
+        else:
+            boost = original_boost
+
         new_y_values = np.clip(current_y + boost, 1, 100)
         
         current_y = pd.Series(new_y_values, index=y.index)
         nudged_history.append(current_y.copy())
-        
-        avg_var = np.mean(cv_preds_var)
-        avg_boost = np.mean(boost)
         
         msg = (f"[Round {t+1}] RMSE={mean_rmse:.2f}, Mean y={current_y.mean():.2f}\n")
         
@@ -107,23 +123,8 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
     n_preds = len(pred_history)
     total_steps = n_preds + 1
 
-    static_annotations = [
-        dict(
-            x=0.02, y=0.12, xref="paper", yref="paper",
-            text="Deep Green = High Clarity (Fast)",
-            showarrow=False,
-            font=dict(color="forestgreen", size=14, family="Arial Black")
-        ),
-        dict(
-            x=0.02, y=0.07, xref="paper", yref="paper",
-            text="Deep Red = High Ambiguity (Slow)",
-            showarrow=False,
-            font=dict(color="firebrick", size=14, family="Arial Black")
-        )
-    ]
-
     for i in range(total_steps):
-        current_annotations = static_annotations + []
+        current_annotations = []
         if i < n_preds:
             idx = i
             title_text = f"Ambiguity Aversion: Iteration {i}"
@@ -137,8 +138,8 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
                     yanchor="bottom",
                     xref="paper", yref="paper",
                     text="<b>Pattern Detected:</b><br>"+
-                    "Deep green dots (clear predictions) rise quickly toward the top of the chart.<br>" + 
-                    "In contrast, deep red dots (uncertain predictions) get stuck and improve much slower.",
+                    "Left side dots (small prediction intervals) rise quickly toward the top of the chart.<br>" + 
+                    "In contrast, right side dots (large prediction intervals) get stuck and improve much slower.",
                     showarrow=False,
                     font=dict(size=16, color="darkblue", family="Arial") 
                 )
@@ -161,19 +162,15 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
         frames.append(go.Frame(
             data=[
                 go.Scatter(x=x_axis, y=y_sorted),
-                go.Scatter(x=x_axis, y=curr_pred),
-                go.Scatter(
-                    x=x_axis, 
-                    y=curr_nudged,
+                go.Scatter(x=x_axis, y=curr_pred,
                     marker=dict(
                         color=speed_factor, 
-                        colorscale='RdYlGn',
+                        colorscale='Blues',
                         cmin=0, cmax=1,
-                        size=10, 
+                        size=8, 
                         line=dict(width=1, color='black'),
-                        colorbar=dict(title="Clarity Speed")
-                    )
-                )
+                        colorbar=dict(title="Clarity Speed"))),
+                go.Scatter(x=x_axis, y=curr_nudged)
             ],
             name=str(i),
             layout=go.Layout(
@@ -205,28 +202,25 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
 
     fig = go.Figure(
         data=[
-            go.Scatter(x=x_axis, y=y_sorted, mode='markers', name='Original Score', marker=dict(color='lightgrey', size=6, opacity=0.3)),
-            go.Scatter(x=x_axis, y=init_pred, mode='markers', name='Prediction', marker=dict(color='blue', size=8, opacity=0.4)),
-            go.Scatter(
-                x=x_axis, y=init_nudged, 
-                mode='markers', 
-                name='Student Performance', 
-                marker=dict(
+            go.Scatter(x=x_axis, y=y_sorted, mode='markers', name='Original Score', marker=dict(color='lightgrey', size=8, opacity=0.8)),
+            go.Scatter(x=x_axis, y=init_pred, mode='markers', name='Prediction', marker=dict(
                     color=init_speed, 
-                    colorscale='RdYlGn', 
+                    colorscale='Blues', 
                     cmin=0, cmax=1,
-                    size=10, 
+                    size=8, 
                     line=dict(width=1, color='black'),
                     showscale=True,
                     colorbar=dict(title="Clarity Speed")
-                )
-            )
+                )),
+            go.Scatter(x=x_axis, y=init_nudged, mode='markers', name='Student Performance', marker=dict(color='red', size=8, opacity=1)),
         ],
         layout=go.Layout(
             width=1000, height=650, autosize=True,
             title="Ambiguity Iteration 0 (Initial State)",
             xaxis=dict(title="Student Index (Sorted by variance)", range=[0, len(y)]),
             yaxis=dict(title="Score", range=[0, 105]),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
             legend=dict(
                 yanchor="bottom",  
                 y=0.01,
@@ -234,20 +228,6 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
                 x=0.99,
                 bgcolor="rgba(255, 255, 255, 0.8)"
             ),
-            annotations=[
-                dict(
-                    x=0.02, y=0.12, xref="paper", yref="paper",
-                    text="Deep Green = High Clarity (Fast)",
-                    showarrow=False,
-                    font=dict(color="forestgreen", size=14, family="Arial Black")
-                ),
-                dict(
-                    x=0.02, y=0.07, xref="paper", yref="paper",
-                    text="Deep Red = High Ambiguity (Slow)",
-                    showarrow=False,
-                    font=dict(color="firebrick", size=14, family="Arial Black")
-                )
-            ],
             **common_layout
         ),
         frames=frames
