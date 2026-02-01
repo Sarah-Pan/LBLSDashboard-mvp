@@ -22,7 +22,7 @@ def get_animation_settings(total_steps, duration=1000, transition=800, slider_la
                 'direction': 'left',
                 'x': 0.1,          
                 'y': -0.15,          
-                'pad': {'r': 10, 't': 10},
+                'pad': {'r': 10, 't': 50},
                 'buttons': [{
                     'label': '▶ Play',
                     'method': 'animate',
@@ -48,7 +48,7 @@ def get_animation_settings(total_steps, duration=1000, transition=800, slider_la
                 'pad': {'b': 10, 't': 50},
                 'len': 0.9,
                 'x': 0.1,
-                'y': 0,
+                'y': -0.1,
                 'steps': [
                     {
                         'args': [[str(k)], {
@@ -64,3 +64,39 @@ def get_animation_settings(total_steps, duration=1000, transition=800, slider_la
 
 
     )
+
+def generate_social_network(n_students, density=0.01, seed=None):
+    if seed:
+        np.random.seed(seed)
+    adj = np.random.choice([0,1], size=(n_students, n_students), p=[1-density, density])
+    np.fill_diagonal(adj, 0)
+    adj= np.maximum(adj, adj.T)
+
+    return adj
+
+def cal_peer_force(current_y, prediction, adj_matrix, w_peer):
+    if w_peer == 0:
+        return np.zeros(len(current_y))
+
+    y_values = current_y.values if isinstance(current_y, pd.Series) else current_y
+    pred_values = prediction.values if isinstance(prediction, pd.Series) else prediction
+
+    friend_counts = adj_matrix.sum(axis=1)
+    safe_counts = np.where(friend_counts == 0, 1, friend_counts) # if friend_counts == 0, make it 1 prevent DivisionZero
+
+    neighbour_sum = np.dot(adj_matrix, pred_values)
+    neighbour_avg = neighbour_sum / safe_counts
+
+    no_friend_mask = (friend_counts == 0)
+    neighbour_avg[no_friend_mask] = y_values[no_friend_mask] # gap = 0, their score stay the same
+
+    gap = neighbour_avg - y_values
+    peer_force = gap * w_peer
+
+    return peer_force
+
+def generate_noise(length, sigma):
+    if sigma <= 0:
+        return 0
+    
+    return np.random.normal(loc=0, scale=sigma, size=length)

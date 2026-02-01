@@ -126,13 +126,51 @@ STRATEGY_INFO= {
 
 }
 
+# Strategy pattern
+STRATEGY_DESCRIPTIONS = {
+    'moral': (
+        "High **predictions** (🔵) above the target cause the *nudged performance* (🔴) to drop significantly."
+        "This drop drags down future **predictions**, creating a downward spiral for high-performing students."
+    ),
+    'reactance': (
+        "*Nudged performance* (🔴) scatter toward the top and bottom extremes, moving away from the central **predictions** (🔵)."
+        "Consequently, the **predictions**  also spread out widely over time."
+    ),
+    'anchor': (
+        "*Nudged performance* (🔴) gravitate toward the **predictions** (🔵) as if pulled by a magnet."
+        "Eventually, the student *nudged performance* and the **predictions** almost completely overlap."
+    ),
+    'social': (
+        "*Nudged performance* (🔴) move toward the group average, causing the **predictions** (🔵) to flatten out."
+        "Eventually, both *nudged performance* and prediction form a single horizontal line."
+    ),
+    'collapse': (
+        "*Nudged performance* (🔴) that start below the threshold drop sharply as students give up."
+        "This crash in *nudged performance* immediately pulls the subsequent **predictions** (🔵) down with them."
+    ),
+    'stereo': (
+        "The Risk Group (▲) drops significantly, and so do their **predictions** (🔵)."
+        "Meanwhile, the Safe Group (●) remains stable or rises slightly."
+    ),
+    'rank': (
+        "Lower-ranked *nudged performance* (🔴) rise rapidly to catch up, pulling their **predictions** (🔵) upward."
+        " In contrast, high-ranked students stay still and are eventually overtaken by the rising group."
+    ),
+    'ambiguity': (
+        "Left side **predictions** (🔵) and *nudged performance* (🔴) (small variance) move quickly toward the top/bottom of the chart."
+        "In contrast, right side **predictions** and *nudged performance* (large variance) get stuck and move much slower."
+    ),
+
+}
+
 # Initialize Dash app with Diskcache for caching
 cache = diskcache.Cache("./cache")
 background_callback_manager = DiskcacheManager(cache)
 
 app = dash.Dash(__name__, background_callback_manager=background_callback_manager)
+app.config.suppress_callback_exceptions = True
 app.title = "Nudging Simulation Lab"
-server = app.server
+# server = app.server
 
 # Layout
 app.layout = html.Div([
@@ -233,8 +271,13 @@ app.layout = html.Div([
                     srcDoc=None
                 )
             )
-        ], className="card graph-card"),        
-    ], className="main-content")
+        ], className="card graph-card"), 
+        dcc.Markdown(
+        id='annotation-card',
+        className='strategy-card',  
+        children="Please select a strategy to see the pattern."
+    )
+    ], className="main-content", style={'padding': '50px'})
 ])
 
 # Callback: Update description based on strategy
@@ -389,6 +432,37 @@ def run_simulation_callback(set_progress, n_clicks, strategy_name, n_rounds, par
 
     return html_content, info_content, info_card_style
 
+@app.callback (
+    Output('annotation-card', 'children'),
+    Input('strategy-dropdown', 'value')
+)
+def update_annotation_text(selected_strategy):
+    default_text = "Please select a strategy to see the pattern."
+    return STRATEGY_DESCRIPTIONS.get(selected_strategy, default_text)
+
+@app.callback(
+    [Output({'type': 'param-slider', 'index': 'sigma'}, 'max'),
+     Output({'type': 'param-slider', 'index': 'sigma'}, 'value'),
+     Output({'type': 'param-slider', 'index': 'sigma'}, 'marks')],
+    [Input({'type': 'param-slider', 'index': 'w'}, 'value')],
+    [State({'type': 'param-slider', 'index': 'sigma'}, 'value')],
+)
+def dynamic_sigma_constraint(w_value, current_sigma):
+    if w_value is None:
+        w_value = 0
+
+    new_max = round(max(w_value / 3.0, 0.01), 2)
+    new_max = round(new_max, 3)
+
+    if current_sigma and current_sigma > new_max:
+        new_value = new_max
+    else:
+        new_value = current_sigma
+        
+    new_marks = {0: '0', new_max: f'{new_max:.2f}'}
+
+    return new_max, new_value, new_marks
+
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
  

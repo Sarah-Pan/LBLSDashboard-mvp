@@ -5,17 +5,15 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import KFold, cross_val_predict
 from sklearn.metrics import mean_squared_error
 
-from .base_utils import load_data, get_animation_settings
+from .base_utils import load_data, get_animation_settings, generate_noise
 
 PARAMS = {
-     'use_noise': {
-        'type': 'radio',
-        'label': 'Random Variation (Noise)',
-        'value': False, 
-        'options': [
-            {'label': 'Off', 'value': False},
-            {'label': 'On', 'value': True}
-        ]
+     'sigma': {
+        'label': r'Noise Level ($\sigma$)', 
+        'min': 0.0, 
+        'max': 1.7,
+        'step': 0.01, 
+        'value': 0.0
     },
     'w': {
         'label': 'Weight ($w$)',
@@ -38,7 +36,9 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.1, **kwar
     pred_history = []
     nudged_history = []
     log_messages = []
-    use_noise = kwargs.get('use_noise', False)
+    raw_sigma = kwargs.get('sigma', 0.0)
+    max_allowed_sigma = w / 3.0
+    actual_sigma = min(raw_sigma, max_allowed_sigma)
     
     # record initial y 
     nudged_history.append(current_y.copy())
@@ -62,10 +62,7 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.1, **kwar
         # reactance effect
         reaction = w * gap
 
-        if use_noise:
-            noise = np.random.normal(loc=0, scale=0.1, size=len(y))
-        else:
-            noise = 0
+        noise = generate_noise(len(y), actual_sigma)
         
         # nudged y 
         new_y_values = current_y + reaction + noise
@@ -98,7 +95,6 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
     frames = []
     n_preds = len(pred_history)
     total_steps = n_preds + 1
-    frame_annotations = []
 
     for i in range(total_steps):
         curr_nudged = np.asarray(nudged_history[i]).ravel()[sort_idx]
@@ -110,19 +106,6 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
             curr_pred = np.asarray(pred_history[-1]).ravel()[sort_idx]
             title_text = f"Social Proof: Final Result (After {n_preds} Iterations)"
 
-            frame_annotations = [
-                dict(
-                    x=0.5, y=0.05,
-                    yanchor="bottom",
-                    xref="paper", yref="paper",
-                    text="<b>Pattern Detected:</b><br>"+
-                    "Red dots move toward the group average, causing the blue prediction markers to flatten out. <br>" + 
-                    "Eventually, both performance and predictions form a single horizontal line.",
-                    showarrow=False,
-                    font=dict(size=16, color="darkblue")
-                )
-            ]
-
         frames.append(go.Frame(
             data=[
                 go.Scatter(x=x_axis, y=y_sorted, mode='markers', marker=dict(color='grey', size=8, opacity=0.8)),
@@ -131,8 +114,7 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
             ],
             name=str(i),
             layout=go.Layout(
-                 title=title_text,
-                 annotations=frame_annotations)
+                 title=title_text)
         ))
 
         # Initial Data
