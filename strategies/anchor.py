@@ -5,7 +5,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import KFold, cross_val_predict
 from sklearn.metrics import mean_squared_error
 
-from .base_utils import load_data, get_animation_settings, generate_noise
+from .base_utils import load_data, get_animation_settings, generate_noise, cal_peer_force, generate_social_network
 
 PARAMS = {
      'sigma': {
@@ -16,21 +16,33 @@ PARAMS = {
         'value': 0.0
     },
     'w': {
-        'label': 'Weight ($w$)',
+        'label': 'Weight ($w_{1}$)',
         'min': 0.0, 'max': 1.0, 'step': 0.1, 'value': 0.1
+    },
+    'peer_weight': {
+        'label': 'Peer Pressure ($w_{2}$)',
+        'min': -0.5,
+        'max': 0.5,   
+        'step': 0.01,
+        'value': 0.05 
     }
+    
 }
 
 def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.1, **kwargs):
     """
     Run iterative nudging simulation based on Anchoring Effect.
-    Formula: y_{t+1} = y_t + w * (y_hat_t - y_t)
+    Formula: y_{t+1} = y_t + w_1 * (y_hat_t - y_t) + w_2 * (y_hat_t - y_t)
     
     Parameters:
-    - w (float): Weight of the nudging effect (how much they slack off).
+    - w_1 (float): Weight of the nudging effect (how much they slack off).
+    - w_2 (float): Peer force weight
     """
 
-    X, y = load_data()
+    df, y = load_data()
+    features = [c for c in df.columns if c not in ['class', 'score']]
+    X = df[features]
+    class_series = df['class']
 
     current_y = y.copy()
     pred_history = []
@@ -39,6 +51,7 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.1, **kwar
     raw_sigma = kwargs.get('sigma', 0.0)
     max_allowed_sigma = w / 3.0
     actual_sigma = min(raw_sigma, max_allowed_sigma)
+    adj_matrix = generate_social_network(class_series)
     
     # record initial y 
     nudged_history.append(current_y.copy())
@@ -63,8 +76,12 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.1, **kwar
 
         noise = generate_noise(len(y), actual_sigma)
 
+        # peer force
+        peer_weight = kwargs.get('peer_weight', 0.05)
+        peer_force = cal_peer_force(current_y, all_preds, adj_matrix, peer_weight)
+
         # nudged y
-        new_y_values = current_y + reaction + noise
+        new_y_values = current_y + reaction + peer_force + noise
 
         new_y_values = np.clip(new_y_values, 1, 100)
         
@@ -86,8 +103,58 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.1, **kwar
 
 def generate_visualization(y, nudged_history, pred_history, **kwargs):
      # setup data
+    df, _ = load_data()
+    if 'class' in df.columns:
+        class_info = df['class']
+    else:
+        class_info = None
+
     first_pred = np.asarray(pred_history[0]).ravel()
-    sort_idx = np.argsort(first_pred)
+
+    tick_vals = []
+    tick_text = []
+    if class_info is not None:
+        df_temp = pd.DataFrame({
+            'class': class_info.values,
+            'pred': first_pred,
+            'original_idx': np.arange(len(y))
+        })
+
+        df_sorted = df_temp.sort_values(by=['class', 'pred'])
+        sort_idx = df_sorted['original_idx'].values
+        sorted_classes = df_sorted['class'].values
+        class_boundaries = np.where(sorted_classes[:-1] != sorted_classes[1:])[0]
+        start_idx = 0
+        for boundary in class_boundaries:
+             end_idx = boundary
+             midpoint = (start_idx + end_idx) / 2
+             class_name = sorted_classes[start_idx]
+             tick_vals.append(midpoint)
+             tick_text.append(str(class_name))
+             start_idx = boundary + 1
+        
+        last_end_idx = len(y) - 1
+        last_midpoint = (start_idx + last_end_idx) / 2
+        last_class_name = sorted_classes[start_idx]
+        tick_vals.append(last_midpoint)
+        tick_text.append(str(last_class_name))
+        x_axis_title = "Student Index (Grouped by Class)"
+    else:
+        sort_idx = np.argsort(first_pred)
+        class_boundaries = []
+        x_axis_title = "Student Index (Sorted by Prediction)"
+
+    shapes = []
+    for boundary in class_boundaries:
+        shapes.append(dict(
+            type="line",
+            x0=boundary + 0.5,
+            y0=0,
+            x1=boundary + 0.5,
+            y1=105, 
+            line=dict(color="rgba(0,0,0,0.2)", width=1, dash="dash") 
+        ))
+
     x_axis = np.arange(len(y))
     y_sorted = np.asarray(y)[sort_idx]
     
@@ -147,8 +214,12 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
             plot_bgcolor='rgba(0,0,0,0)',
             margin=dict(l=40, r=40, t=80, b=40),
             title="Anchoring Effect Iteration 0 (Initial State)",
-            xaxis=dict(title="Student Index (Sorted by Prediction)", range=[0, len(y)]),
+            xaxis=dict(title=x_axis_title, 
+                       range=[0, len(y)],
+                       tickvals=tick_vals if tick_vals else None,
+                       ticktext=tick_text if tick_text else None),
             yaxis=dict(title="Score", range=[0, 105]),
+            shapes=shapes,
 
             **common_layout
         ),

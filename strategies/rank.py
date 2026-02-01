@@ -35,7 +35,9 @@ def run_simulation(n_rounds=5, n_splits=5, w=0.5, threshold=100, progress_callba
     - w (float): Weight of the nudging effect (how much they slack off).
     """
 
-    X, y = load_data()
+    df, y = load_data()
+    features = [c for c in df.columns if c not in ['class', 'score']]
+    X = df[features]
 
     current_y = y.copy()
     pred_history = []

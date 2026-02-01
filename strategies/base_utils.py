@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def load_data(file_path="merged_data.csv", target_column="score"):
+def load_data(file_path="merged_class_data.csv", target_column="score"):
     df = pd.read_csv(file_path)
     X = df.drop(columns=[target_column])
     y = df[target_column]
@@ -65,12 +65,10 @@ def get_animation_settings(total_steps, duration=1000, transition=800, slider_la
 
     )
 
-def generate_social_network(n_students, density=0.01, seed=None):
-    if seed:
-        np.random.seed(seed)
-    adj = np.random.choice([0,1], size=(n_students, n_students), p=[1-density, density])
+def generate_social_network(class_series):
+    classes = class_series.values if isinstance(class_series, pd.Series) else np.array(class_series)
+    adj = (classes[:, None] == classes[None, :]).astype(int)
     np.fill_diagonal(adj, 0)
-    adj= np.maximum(adj, adj.T)
 
     return adj
 

@@ -46,7 +46,7 @@ STRATEGY_INFO= {
         '''
     },
     'anchor':{
-        'title': 'Concept: Anchoring Effect',
+        'title': 'Concept: Anchoring Effect (+ Peer Effect)',
         'description': r'''
 
         **Effect:** Student subconsciously aligns actual performance with the prediction.
@@ -54,7 +54,7 @@ STRATEGY_INFO= {
         **Example:** A student predicted to score 85 gradually adjusts effort to match that expectation, even if initially aiming for 80.
 
         **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t + w(\hat{y}_t - y_t) + \mathcal{E}_{noise}$
+        $y_{t+1} = y_t + w_{1}(\hat{y}_t - y_t) + w_{2}(\hat{y}_t - y_t) + \mathcal{E}_{noise}$
     '''
     },
     'social':{

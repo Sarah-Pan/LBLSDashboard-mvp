@@ -35,7 +35,9 @@ def run_simulation(n_rounds=5, n_splits=5, w=0.5, threshold=80, progress_callbac
     - threshold (float): The goal threshold (y_target).
     """
 
-    X, y = load_data()
+    df, y = load_data()
+    features = [c for c in df.columns if c not in ['class', 'score']]
+    X = df[features]
 
     current_y = y.copy()
     pred_history = []
@@ -74,11 +76,11 @@ def run_simulation(n_rounds=5, n_splits=5, w=0.5, threshold=80, progress_callbac
         noise = generate_noise(len(y), actual_sigma)
 
         # peer force
-        peer_weight = kwargs.get('peer_weight', -0.05)
-        peer_force = cal_peer_force(current_y, all_preds, adj_matrix, peer_weight)
+        # peer_weight = kwargs.get('peer_weight', -0.05)
+        # peer_force = cal_peer_force(current_y, all_preds, adj_matrix, peer_weight)
 
         # nudged y 
-        new_y_values = current_y - decay + peer_force + noise
+        new_y_values = current_y - decay + noise
         new_y_values = np.clip(new_y_values, 1, 100)
         
         # update current_y
