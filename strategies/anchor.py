@@ -40,7 +40,7 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.1, **kwar
     """
 
     df, y = load_data()
-    features = [c for c in df.columns if c not in ['class', 'score']]
+    features = [c for c in df.columns if c != 'class']
     X = df[features]
     class_series = df['class']
 

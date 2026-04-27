@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
 
-def load_data(file_path="merged_class_data.csv", target_column="score"):
+def load_data(file_path="merged_class_data.csv", target_column="score", extra_drop=None):
     df = pd.read_csv(file_path)
+    if extra_drop:
+        df = df.drop(columns=extra_drop)
     X = df.drop(columns=[target_column])
     y = df[target_column]
     return X, y

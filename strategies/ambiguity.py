@@ -31,9 +31,7 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=5, **kwargs
     prediction variance for the validation set.
     """
 
-    df, y = load_data()
-    features = [c for c in df.columns if c not in ['class', 'score']]
-    X = df[features]
+    X, y = load_data(extra_drop=['class'])
     
     current_y = y.copy()
     nudged_history = [current_y.copy()]

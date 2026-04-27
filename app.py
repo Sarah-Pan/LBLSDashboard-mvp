@@ -28,7 +28,7 @@ STRATEGY_INFO= {
         **Example:** A student sees a predicted grade of 95 (above target 80) and relaxes, studying less.
 
         **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t - w [\hat{y}_t - y_{target}]_+  + \mathcal{E}_{noise}$
+        $\tilde{y}_{t+1} = y_t - w [F_{t+1} - y_{target}]_+  + \mathcal{E}_{noise}$
 
         '''
     },
@@ -41,32 +41,7 @@ STRATEGY_INFO= {
         **Example:** A student predicted to score 70 feels controlled and works extra hard to prove the model wrong, aiming for 90.
 
         **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t - w(\hat{y}_t - y_t) + \mathcal{E}_{noise}$
-
-        '''
-    },
-    'anchor':{
-        'title': 'Concept: Anchoring Effect (+ Peer Effect)',
-        'description': r'''
-
-        **Effect:** Student subconsciously aligns actual performance with the prediction.
-
-        **Example:** A student predicted to score 85 gradually adjusts effort to match that expectation, even if initially aiming for 80.
-
-        **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t + w_{1}(\hat{y}_t - y_t) + w_{2}(\hat{y}_t - y_t) + \mathcal{E}_{noise}$
-    '''
-    },
-    'social':{
-        'title': 'Concept: Social Proof',
-        'description': r'''
-
-        **Effect:** Student adjusts performance to match predicted population average.
-
-        **Example:** A student sees most peers predicted at 90 and increases effort to align with the group norm.
-
-         **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t + w(\overline{\hat{y}}_t - y_t) + \mathcal{E}_{noise}$
+        $\tilde{y}_{t+1} = y_t - w(F_{t+1} - y_t) + \mathcal{E}_{noise}$
 
         '''
     },
@@ -79,21 +54,8 @@ STRATEGY_INFO= {
         **Example:** A student predicted to score 50 (below passing threshold 60) feels hopeless and stops trying.
 
         **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t - w [\hat{y}_t - \theta]_- + \mathcal{E}_{noise}$
+        $\tilde{y}_{t+1} = y_t - w [F_{t+1} - \theta]_- + \mathcal{E}_{noise}$
 
-        '''
-    },
-    'stereo':{
-        'title': 'Concept: Stereotype Threat',
-        'description': r'''
-
-        **Effect:** Performance drops when minority agents feel underestimated.
-
-        **Example:** A student from an underrepresented group sees a low predicted score and performs worse due to anxiety.
-
-        **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t - w \cdot X_{bias} \cdot [y_t - \hat{y}_t]_+ + \mathcal{E}_{noise}$
-        
         '''
     },
     'rank':{
@@ -105,10 +67,50 @@ STRATEGY_INFO= {
         **Example:** A student predicted to rank 150th (threshold = 100) works harder to climb into the top 100.
 
         **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t + w [\hat{r} - \tau]_+ + \mathcal{E}_{noise}$
+        $\tilde{y}_{t+1} = y_t + w [\hat{r} - \tau]_+ + \mathcal{E}_{noise}$
 
         '''
     },
+    'anchor':{
+        'title': 'Concept: Anchoring Effect (+ Peer Effect)',
+        'description': r'''
+
+        **Effect:** Student subconsciously aligns actual performance with the prediction.
+
+        **Example:** A student predicted to score 85 gradually adjusts effort to match that expectation, even if initially aiming for 80.
+
+        **Formula for Iteration t+1:**  
+        $\tilde{y}_{t+1} = y_t + w_1(F_{t+1} - y_t) + w_2(\bar{F}^{\text{peer}}_{t+1} - F_{t+1}) + \mathcal{E}_{\text{noise}}$
+    '''
+    },
+    'social':{
+        'title': 'Concept: Social Proof',
+        'description': r'''
+
+        **Effect:** Student adjusts performance to match predicted population average.
+
+        **Example:** A student sees most peers predicted at 90 and increases effort to align with the group norm.
+
+         **Formula for Iteration t+1:**  
+        $\tilde{y}_{t+1} = y_t + w(\overline{F}_{t+1} - y_t) + \mathcal{E}_{noise}$
+
+        '''
+    },
+    
+    'stereo':{
+        'title': 'Concept: Stereotype Threat',
+        'description': r'''
+
+        **Effect:** Performance drops when minority agents feel underestimated.
+
+        **Example:** A student from an underrepresented group sees a low predicted score and performs worse due to anxiety.
+
+        **Formula for Iteration t+1:**  
+        $\tilde{y}_{t+1} = y_t - w \cdot X_{bias} \cdot [y_t - F_{t+1}]_+ + \mathcal{E}_{noise}$
+        
+        '''
+    },
+    
     'ambiguity':{
         'title': 'Concept: Ambiguity Aversion',
         'description': r'''
@@ -118,9 +120,7 @@ STRATEGY_INFO= {
         **Example:** A student sees a prediction with high uncertainty (wide prediction interval) and hesitates to change study habits.
 
         **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t + w \cdot \exp(-\sigma^2) + \mathcal{E}_{noise}$
-
-
+        $\tilde{y}_{t+1} = y_t + w \cdot \exp(-\sigma^2) + \mathcal{E}_{noise}$
         '''
     }
 
@@ -186,11 +186,11 @@ app.layout = html.Div([
             options=[
                 {'label': 'Moral Licensing', 'value': 'moral'},
                 {'label': 'Psychological Reactance', 'value': 'reactance'},
+                {'label': 'Collapse Effect', 'value': 'collapse'},
+                {'label': 'Rank Anxiety', 'value': 'rank'},
                 {'label': 'Anchoring Effect', 'value': 'anchor'},
                 {'label': 'Social Proof', 'value': 'social'},
-                {'label': 'Collapse Effect', 'value': 'collapse'},
-                {'label': 'Stereotype Threat', 'value': 'stereo'},
-                {'label': 'Rank Anxiety', 'value': 'rank'},
+                {'label': 'Stereotype Threat', 'value': 'stereo'}, 
                 {'label': 'Ambiguity Aversion', 'value': 'ambiguity'}
             ],
             value='moral',
