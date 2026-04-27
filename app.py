@@ -170,7 +170,7 @@ background_callback_manager = DiskcacheManager(cache)
 app = dash.Dash(__name__, background_callback_manager=background_callback_manager)
 app.config.suppress_callback_exceptions = True
 app.title = "Nudging Simulation Lab"
-# server = app.server
+server = app.server
 
 # Layout
 app.layout = html.Div([
@@ -464,5 +464,5 @@ def dynamic_sigma_constraint(w_value, current_sigma):
     return new_max, new_value, new_marks
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
  
