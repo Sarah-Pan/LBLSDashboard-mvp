@@ -18,7 +18,7 @@ PARAMS={
     },
     'w': {
         'label': 'Weight ($w$)',
-        'min': 0.0, 'max': 1.0, 'step': 0.01, 'value': 0.2
+        'min': 0.0, 'max': 1.0, 'step': 0.01, 'value': 0.1
     },
      'threshold':{
           'label': r'Threshold Score($\theta$)',
