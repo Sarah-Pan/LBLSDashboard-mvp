@@ -21,8 +21,15 @@ PARAMS={'sigma': {
     },
      'threshold':{
           'label': r'Target Score ($y_{target}$)',
-          'min': 0, 'max': 100, 'step': 1, 'value': 80,
-     }
+          'min': 0, 'max': 100, 'step': 1, 'value': 75,
+     },
+     'peer_weight': {
+        'label': 'Peer Effect Weight ($w_{2}$)',
+        'min': -0.5,
+        'max': 0.5,   
+        'step': 0.01,
+        'value': 0.05 
+    }
 }
 
 def run_simulation(n_rounds=5, n_splits=5, w=0.5, threshold=80, progress_callback=None, **kwargs):
@@ -35,20 +42,16 @@ def run_simulation(n_rounds=5, n_splits=5, w=0.5, threshold=80, progress_callbac
     - threshold (float): The goal threshold (y_target).
     """
 
-    X, y = load_data(extra_drop=['class'])
-    # features = [c for c in df.columns if c not in ['class', 'score']]
-    # X = df[features]
+    X, y, class_series = load_data()
 
     current_y = y.copy()
     pred_history = []
     nudged_history = []
     log_messages = []
-    # net_density = kwargs.get('network_density', 0.05)
-    # adj_matrix = generate_social_network(len(y), density=net_density)
-
     raw_sigma = kwargs.get('sigma', 0.0)
     max_allowed_sigma = w / 3.0
     actual_sigma = min(raw_sigma, max_allowed_sigma)
+    adj_matrix = generate_social_network(class_series)
     
     # record initial y 
     nudged_history.append(current_y.copy())
@@ -76,11 +79,11 @@ def run_simulation(n_rounds=5, n_splits=5, w=0.5, threshold=80, progress_callbac
         noise = generate_noise(len(y), actual_sigma)
 
         # peer force
-        # peer_weight = kwargs.get('peer_weight', -0.05)
-        # peer_force = cal_peer_force(current_y, all_preds, adj_matrix, peer_weight)
+        peer_weight = kwargs.get('peer_weight', 0.05)
+        peer_force = cal_peer_force(current_y, all_preds, adj_matrix, peer_weight)
 
         # nudged y 
-        new_y_values = current_y - decay + noise
+        new_y_values = current_y - decay + peer_force + noise
         new_y_values = np.clip(new_y_values, 1, 100)
         
         # update current_y
@@ -100,13 +103,68 @@ def run_simulation(n_rounds=5, n_splits=5, w=0.5, threshold=80, progress_callbac
 
 def generate_visualization(y, nudged_history, pred_history, threshold=80, **kwargs):
     # setup data
+    peer_weight = kwargs.get('peer_weight', 0)
     first_pred = np.asarray(pred_history[0]).ravel()
-    sort_idx = np.argsort(first_pred)
-    x_axis = np.arange(len(y))
-    y_sorted = np.asarray(y)[sort_idx]
+    tick_vals = []
+    tick_text = []
+    class_boundaries = []
+    _, _, class_series = load_data()
+    
+    if  peer_weight != 0:
+        df_temp = pd.DataFrame({
+            'class': class_series.values,
+            'pred': first_pred,
+            'original_idx': np.arange(len(y))
+        })
+
+        # sorted by class
+        df_sorted = df_temp.sort_values(by=['class', 'pred'])
+        sort_idx = df_sorted['original_idx'].values
+        sorted_classes = df_sorted['class'].values
+        # class boundaries
+        class_boundaries = np.where(sorted_classes[:-1] != sorted_classes[1:])[0]
+
+        start_idx = 0
+        for boundary in class_boundaries:
+             end_idx = boundary
+             midpoint = (start_idx + end_idx) / 2
+             class_name = sorted_classes[start_idx]
+             tick_vals.append(midpoint)
+             tick_text.append(str(class_name))
+             start_idx = boundary + 1
+        
+        # last class
+        last_end_idx = len(y) - 1
+        last_midpoint = (start_idx + last_end_idx) / 2
+        last_class_name = sorted_classes[start_idx]
+        tick_vals.append(last_midpoint)
+        tick_text.append(str(last_class_name))
+        x_axis_title = "Student Index (Grouped by Class)"
+        
+    else: # peer_weight == 0 
+        sort_idx = np.argsort(first_pred)
+        x_axis_title = "Student Index (Sorted by Prediction)"
+        
+    shapes = []
+    for boundary in class_boundaries:
+        shapes.append(dict(
+            type="line",
+            x0=boundary + 0.5, y0=0,
+            x1=boundary + 0.5, y1=105,
+            line=dict(color="rgba(0,0,0,0.2)", width=1, dash="dash")
+        ))
+    
+    threshold_line = {
+                'type': 'line',
+                'x0': 0, 'x1': len(y),
+                'y0': threshold, 'y1': threshold,
+                'line': {'color': 'darkgreen', 'dash': 'dash', 'width': 2}
+            }
     
     # Frames
     frames = []
+    x_axis = np.arange(len(y))
+    y_sorted = np.asarray(y)[sort_idx]
     n_preds = len(pred_history)
     total_steps = n_preds + 1
 
@@ -136,12 +194,7 @@ def generate_visualization(y, nudged_history, pred_history, threshold=80, **kwar
 
     custom_labels = []
     for i in range(total_steps):
-        if i  == 0:
-              custom_labels.append("Start")
-        elif i == total_steps -1:
-            custom_labels.append(f"Final(Iteration {i})")
-        else:
-              custom_labels.append(f"Iteration {i}")
+        custom_labels.append("Start" if i == 0 else (f"Final" if i == total_steps-1 else f"Iteration {i}"))
 
     common_layout = get_animation_settings(total_steps=total_steps, duration=1000, transition=800, slider_labels=custom_labels)
 
@@ -159,16 +212,14 @@ def generate_visualization(y, nudged_history, pred_history, threshold=80, **kwar
             plot_bgcolor='rgba(0,0,0,0)',
             margin=dict(l=40, r=40, t=80, b=40),
             title="Moral Licensing Iteration 0 (Initial State)",
-            xaxis=dict(title="Student Index (Sorted by Prediction)", range=[0, len(y)]),
+            xaxis=dict(title=x_axis_title, 
+                       range=[0, len(y)],
+                       tickvals=tick_vals if tick_vals else None,
+                       ticktext=tick_text if tick_text else None),
             yaxis=dict(title="Score", range=[0, 105]),
         
             
-            shapes=[{
-                'type': 'line',
-                'x0': 0, 'x1': len(y),
-                'y0': threshold, 'y1': threshold,
-                'line': {'color': 'darkgreen', 'dash': 'dash', 'width': 2}
-            }],
+            shapes=shapes + [threshold_line],
 
             **common_layout
         ),

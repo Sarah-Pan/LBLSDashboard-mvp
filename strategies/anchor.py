@@ -20,7 +20,7 @@ PARAMS = {
         'min': 0.0, 'max': 1.0, 'step': 0.1, 'value': 0.1
     },
     'peer_weight': {
-        'label': 'Peer Pressure ($w_{2}$)',
+        'label': 'Peer Effect Weight ($w_{2}$)',
         'min': -0.5,
         'max': 0.5,   
         'step': 0.01,
@@ -39,10 +39,7 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.1, **kwar
     - w_2 (float): Peer force weight
     """
 
-    df, y = load_data()
-    features = [c for c in df.columns if c != 'class']
-    X = df[features]
-    class_series = df['class']
+    X, y, class_series = load_data()
 
     current_y = y.copy()
     pred_history = []
@@ -102,28 +99,30 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.1, **kwar
     return y, nudged_history, pred_history, log_messages, {}
 
 def generate_visualization(y, nudged_history, pred_history, **kwargs):
-     # setup data
-    df, _ = load_data()
-    if 'class' in df.columns:
-        class_info = df['class']
-    else:
-        class_info = None
-
+    peer_weight = kwargs.get('peer_weight', 0)
     first_pred = np.asarray(pred_history[0]).ravel()
 
     tick_vals = []
     tick_text = []
-    if class_info is not None:
+    class_boundaries = []
+
+     # setup data
+    _, _, class_series = load_data()
+
+    if  peer_weight != 0:
         df_temp = pd.DataFrame({
-            'class': class_info.values,
+            'class': class_series.values,
             'pred': first_pred,
             'original_idx': np.arange(len(y))
         })
 
+        # sorted by class
         df_sorted = df_temp.sort_values(by=['class', 'pred'])
         sort_idx = df_sorted['original_idx'].values
         sorted_classes = df_sorted['class'].values
+        # class boundaries
         class_boundaries = np.where(sorted_classes[:-1] != sorted_classes[1:])[0]
+
         start_idx = 0
         for boundary in class_boundaries:
              end_idx = boundary
@@ -133,32 +132,31 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
              tick_text.append(str(class_name))
              start_idx = boundary + 1
         
+        # last class
         last_end_idx = len(y) - 1
         last_midpoint = (start_idx + last_end_idx) / 2
         last_class_name = sorted_classes[start_idx]
         tick_vals.append(last_midpoint)
         tick_text.append(str(last_class_name))
         x_axis_title = "Student Index (Grouped by Class)"
-    else:
+        
+    else: # peer_weight == 0 
         sort_idx = np.argsort(first_pred)
-        class_boundaries = []
         x_axis_title = "Student Index (Sorted by Prediction)"
-
+        
     shapes = []
     for boundary in class_boundaries:
         shapes.append(dict(
             type="line",
-            x0=boundary + 0.5,
-            y0=0,
-            x1=boundary + 0.5,
-            y1=105, 
-            line=dict(color="rgba(0,0,0,0.2)", width=1, dash="dash") 
+            x0=boundary + 0.5, y0=0,
+            x1=boundary + 0.5, y1=105,
+            line=dict(color="rgba(0,0,0,0.2)", width=1, dash="dash")
         ))
-
+    
+    # Frames
+    frames = []
     x_axis = np.arange(len(y))
     y_sorted = np.asarray(y)[sort_idx]
-    
-    frames = []
     n_preds = len(pred_history)
     total_steps = n_preds + 1
 
@@ -191,12 +189,7 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
 
     custom_labels = []
     for i in range(total_steps):
-        if i  == 0:
-              custom_labels.append("Start")
-        elif i == total_steps -1:
-            custom_labels.append(f"Final(Iteration {i})")
-        else:
-              custom_labels.append(f"Iteration {i}")
+        custom_labels.append("Start" if i == 0 else (f"Final" if i == total_steps-1 else f"Iteration {i}"))
 
     common_layout = get_animation_settings(total_steps=total_steps, duration=1000, transition=800, slider_labels=custom_labels)
 

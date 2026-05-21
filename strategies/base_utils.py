@@ -1,14 +1,19 @@
 import numpy as np
 import pandas as pd
 
-def load_data(file_path="merged_class_data.csv", target_column="score", extra_drop=None):
-    df = pd.read_csv(file_path)
-    if extra_drop:
-        df = df.drop(columns=extra_drop)
-    X = df.drop(columns=[target_column])
-    y = df[target_column]
-    return X, y
+def load_data(file_path="merged_class_data.csv", target_column="score"):
+    df = pd.read_csv(file_path)  
 
+    class_series = df['class']
+    y = df[target_column]
+
+    exclude_cols = ['class', 'score']
+
+    features = [c for c in df.columns if c not in exclude_cols]
+    X = df[features]
+    
+    return X, y, class_series
+    
 def get_animation_settings(total_steps, duration=1000, transition=800, slider_labels=None):
     
     if slider_labels is None:
