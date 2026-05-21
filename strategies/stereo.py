@@ -241,7 +241,7 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.5, thresh
         mse = mean_squared_error(current_y, all_preds)
         mean_rmse = np.sqrt(mse)
 
-        # 2. stereotype effect nudging
+        # Stereotype effect nudging
         # Formula: y_{t+1} = y_t - w * X_bias * [y_t - y_hat]_+
         gap = np.maximum(0, current_y - all_preds)
 

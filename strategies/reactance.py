@@ -62,7 +62,7 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.5, **kwar
         mse = mean_squared_error(current_y, all_preds)
         mean_rmse = np.sqrt(mse)
 
-        # 2. Psychological Reactance
+        # Psychological Reactance
         # Formula: y_{t+1} = y_t - w * (y_hat_t - y_t)
         gap = all_preds - current_y
 
