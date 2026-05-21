@@ -28,7 +28,7 @@ STRATEGY_INFO= {
         **Example:** A student sees a predicted grade of 95 (above target 80) and relaxes, studying less.
 
         **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t - w [\hat{y}_t - y_{target}]_+  + \mathcal{E}_{noise}$
+        $\tilde{y}_{t+1} = y_t - w [F_{t+1} - y_{target}]^+  + \mathcal{E}_{noise}$
 
         '''
     },
@@ -41,32 +41,7 @@ STRATEGY_INFO= {
         **Example:** A student predicted to score 70 feels controlled and works extra hard to prove the model wrong, aiming for 90.
 
         **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t - w(\hat{y}_t - y_t) + \mathcal{E}_{noise}$
-
-        '''
-    },
-    'anchor':{
-        'title': 'Concept: Anchoring Effect',
-        'description': r'''
-
-        **Effect:** Student subconsciously aligns actual performance with the prediction.
-
-        **Example:** A student predicted to score 85 gradually adjusts effort to match that expectation, even if initially aiming for 80.
-
-        **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t + w(\hat{y}_t - y_t) + \mathcal{E}_{noise}$
-    '''
-    },
-    'social':{
-        'title': 'Concept: Social Proof',
-        'description': r'''
-
-        **Effect:** Student adjusts performance to match predicted population average.
-
-        **Example:** A student sees most peers predicted at 90 and increases effort to align with the group norm.
-
-         **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t + w(\overline{\hat{y}}_t - y_t) + \mathcal{E}_{noise}$
+        $\tilde{y}_{t+1} = y_t - w(F_{t+1} - y_t) + \mathcal{E}_{noise}$
 
         '''
     },
@@ -79,21 +54,8 @@ STRATEGY_INFO= {
         **Example:** A student predicted to score 50 (below passing threshold 60) feels hopeless and stops trying.
 
         **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t - w [\hat{y}_t - \theta]_- + \mathcal{E}_{noise}$
+        $\tilde{y}_{t+1} = y_t - w [F_{t+1} - \theta]^- + \mathcal{E}_{noise}$
 
-        '''
-    },
-    'stereo':{
-        'title': 'Concept: Stereotype Threat',
-        'description': r'''
-
-        **Effect:** Performance drops when minority agents feel underestimated.
-
-        **Example:** A student from an underrepresented group sees a low predicted score and performs worse due to anxiety.
-
-        **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t - w \cdot X_{bias} \cdot [y_t - \hat{y}_t]_+ + \mathcal{E}_{noise}$
-        
         '''
     },
     'rank':{
@@ -105,10 +67,50 @@ STRATEGY_INFO= {
         **Example:** A student predicted to rank 150th (threshold = 100) works harder to climb into the top 100.
 
         **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t + w [\hat{r} - \tau]_+ + \mathcal{E}_{noise}$
+        $\tilde{y}_{t+1} = y_t + w [\hat{r} - \tau]^+ + \mathcal{E}_{noise}$
 
         '''
     },
+    'anchor':{
+        'title': 'Concept: Anchoring Effect (+ Peer Effect)',
+        'description': r'''
+
+        **Effect:** Student subconsciously aligns actual performance with the prediction.
+
+        **Example:** A student predicted to score 85 gradually adjusts effort to match that expectation, even if initially aiming for 80.
+
+        **Formula for Iteration t+1:**  
+        $\tilde{y}_{t+1} = y_t + w(F_{t+1} - y_t) + \mathcal{E}_{\text{noise}}$
+    '''
+    },
+    'social':{
+        'title': 'Concept: Social Proof',
+        'description': r'''
+
+        **Effect:** Student adjusts performance to match predicted population average.
+
+        **Example:** A student sees most peers predicted at 90 and increases effort to align with the group norm.
+
+         **Formula for Iteration t+1:**  
+        $\tilde{y}_{t+1} = y_t + w(\overline{F}_{t+1} - y_t) + \mathcal{E}_{noise}$
+
+        '''
+    },
+    
+    'stereo':{
+        'title': 'Concept: Stereotype Threat',
+        'description': r'''
+
+        **Effect:** Performance drops when minority agents feel underestimated.
+
+        **Example:** A student from an underrepresented group sees a low predicted score and performs worse due to anxiety.
+
+        **Formula for Iteration t+1:**  
+        $\tilde{y}_{t+1} = y_t - w \cdot X_{bias} \cdot [y_t - F_{t+1}]^+ + \mathcal{E}_{noise}$
+        
+        '''
+    },
+    
     'ambiguity':{
         'title': 'Concept: Ambiguity Aversion',
         'description': r'''
@@ -118,9 +120,7 @@ STRATEGY_INFO= {
         **Example:** A student sees a prediction with high uncertainty (wide prediction interval) and hesitates to change study habits.
 
         **Formula for Iteration t+1:**  
-        $y_{t+1} = y_t + w \cdot \exp(-\sigma^2) + \mathcal{E}_{noise}$
-
-
+        $\tilde{y}_{t+1} = y_t + \frac{w}{\sigma^2} + \mathcal{E}_{noise}$
         '''
     }
 
@@ -130,27 +130,27 @@ STRATEGY_INFO= {
 STRATEGY_DESCRIPTIONS = {
     'moral': (
         "High **predictions** (🔵) above the target cause the *nudged performance* (🔴) to drop significantly."
-        "This drop drags down future **predictions**, creating a downward spiral for high-performing students."
+        " This drop drags down future **predictions**, creating a downward spiral for high-performing students."
     ),
     'reactance': (
         "*Nudged performance* (🔴) scatter toward the top and bottom extremes, moving away from the central **predictions** (🔵)."
-        "Consequently, the **predictions**  also spread out widely over time."
+        " Consequently, the **predictions**  also spread out widely over time."
     ),
     'anchor': (
         "*Nudged performance* (🔴) gravitate toward the **predictions** (🔵) as if pulled by a magnet."
-        "Eventually, the student *nudged performance* and the **predictions** almost completely overlap."
+        " Eventually, the student *nudged performance* and the **predictions** almost completely overlap."
     ),
     'social': (
         "*Nudged performance* (🔴) move toward the group average, causing the **predictions** (🔵) to flatten out."
-        "Eventually, both *nudged performance* and prediction form a single horizontal line."
+        " Eventually, both *nudged performance* and prediction form a single horizontal line."
     ),
     'collapse': (
         "*Nudged performance* (🔴) that start below the threshold drop sharply as students give up."
-        "This crash in *nudged performance* immediately pulls the subsequent **predictions** (🔵) down with them."
+        " This crash in *nudged performance* immediately pulls the subsequent **predictions** (🔵) down with them."
     ),
     'stereo': (
         "The Risk Group (▲) drops significantly, and so do their **predictions** (🔵)."
-        "Meanwhile, the Safe Group (●) remains stable or rises slightly."
+        " Meanwhile, the Safe Group (●) remains stable or rises slightly."
     ),
     'rank': (
         "Lower-ranked *nudged performance* (🔴) rise rapidly to catch up, pulling their **predictions** (🔵) upward."
@@ -158,7 +158,7 @@ STRATEGY_DESCRIPTIONS = {
     ),
     'ambiguity': (
         "Left side **predictions** (🔵) and *nudged performance* (🔴) (small variance) move quickly toward the top/bottom of the chart."
-        "In contrast, right side **predictions** and *nudged performance* (large variance) get stuck and move much slower."
+        " In contrast, right side **predictions** and *nudged performance* (large variance) get stuck and move much slower."
     ),
 
 }
@@ -186,11 +186,11 @@ app.layout = html.Div([
             options=[
                 {'label': 'Moral Licensing', 'value': 'moral'},
                 {'label': 'Psychological Reactance', 'value': 'reactance'},
+                {'label': 'Collapse Effect', 'value': 'collapse'},
+                {'label': 'Rank Anxiety', 'value': 'rank'},
                 {'label': 'Anchoring Effect', 'value': 'anchor'},
                 {'label': 'Social Proof', 'value': 'social'},
-                {'label': 'Collapse Effect', 'value': 'collapse'},
-                {'label': 'Stereotype Threat', 'value': 'stereo'},
-                {'label': 'Rank Anxiety', 'value': 'rank'},
+                {'label': 'Stereotype Threat', 'value': 'stereo'}, 
                 {'label': 'Ambiguity Aversion', 'value': 'ambiguity'}
             ],
             value='moral',
