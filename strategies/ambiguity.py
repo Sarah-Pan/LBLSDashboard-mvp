@@ -76,7 +76,7 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=5, **kwargs
         mean_rmse = np.sqrt(mse)
 
         # Ambiguity Nudging
-        # Formula: y_{t+1} = y_t + w * exp(- normalized variance)
+        # Formula: y_{t+1} = y_t + w/sigma
         # Normalize variance to [0,1]
         v_min, v_max = cv_preds_var.min(), cv_preds_var.max()
         if v_max - v_min > 0:

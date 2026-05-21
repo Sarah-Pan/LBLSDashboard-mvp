@@ -62,7 +62,7 @@ def run_simulation(n_rounds=5, n_splits=5, progress_callback=None, w=0.1, **kwar
         mse = mean_squared_error(current_y, all_preds)
         mean_rmse = np.sqrt(mse)
 
-        # 2. Social Proof Nudging
+        # Social Proof Nudging
         # Formula: y_{t+1} = y_t + w * (y_hat_bar_t - y_t)
         mean_pred = np.mean(all_preds)
         gap = mean_pred - current_y

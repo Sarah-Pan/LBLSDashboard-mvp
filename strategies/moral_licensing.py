@@ -5,7 +5,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import KFold, cross_val_predict
 from sklearn.metrics import mean_squared_error
 
-from .base_utils import load_data, get_animation_settings, generate_noise
+from .base_utils import load_data, get_animation_settings, generate_noise, generate_social_network, cal_peer_force
 
 # Parameters:
 PARAMS={'sigma': {
