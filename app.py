@@ -167,7 +167,7 @@ STRATEGY_DESCRIPTIONS = {
 cache = diskcache.Cache("./cache")
 background_callback_manager = DiskcacheManager(cache)
 
-app = dash.Dash(__name__, background_callback_manager=background_callback_manager)
+app = dash.Dash(__name__, background_callback_manager=background_callback_manager, serve_locally=True, eager_loading=True,)
 app.config.suppress_callback_exceptions = True
 app.title = "Nudging Simulation Lab"
 server = app.server
