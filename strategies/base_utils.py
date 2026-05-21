@@ -73,7 +73,9 @@ def get_animation_settings(total_steps, duration=1000, transition=800, slider_la
     )
 
 def generate_social_network(class_series):
-    classes = class_series.values if isinstance(class_series, pd.Series) else np.array(class_series)
+    classes = class_series.to_numpy() if isinstance(class_series, pd.Series) else np.array(class_series)
+    if len(classes.shape) > 1:
+        classes = classes.flatten()
     adj = (classes[:, None] == classes[None, :]).astype(int)
     np.fill_diagonal(adj, 0)
 
