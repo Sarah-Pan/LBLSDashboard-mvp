@@ -6,3 +6,4 @@ plotly
 psutil
 diskcache == 5.6.3
 gunicorn
+multiprocess==0.70.18
