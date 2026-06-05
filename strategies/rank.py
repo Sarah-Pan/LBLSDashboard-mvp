@@ -208,7 +208,7 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
     fig = go.Figure(
         data=[
             # Trace 0: original
-            go.Scatter(x=x_axis, y=y_sorted, mode='markers', name='Original', 
+            go.Scatter(x=x_axis, y=y_sorted, mode='markers', name='Unnudged Performance', 
                        marker=dict(color='lightgrey', size=6, opacity=0.8)),
             # Trace 1: prediction
             go.Scatter(x=x_axis, y=first_pred[sort_idx], mode='markers', name='Prediction', 

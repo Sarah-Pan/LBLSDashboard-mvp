@@ -192,7 +192,7 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
 
     fig = go.Figure(
         data=[
-            go.Scatter(x=x_axis, y=y_sorted, mode='markers', name='Ground Truth', marker=dict(color='grey', size=6, opacity=0.3)),
+            go.Scatter(x=x_axis, y=y_sorted, mode='markers', name='Unnudged Performance', marker=dict(color='grey', size=6, opacity=0.3)),
             go.Scatter(x=x_axis, y=initial_pred, mode='markers', name='Prediction', marker=dict(color='blue', size=8, opacity=0.6)),
             go.Scatter(x=x_axis, y=initial_nudged, mode='markers', name='Nudged Performance', marker=dict(color='red', size=8, opacity=0.8))
         ],

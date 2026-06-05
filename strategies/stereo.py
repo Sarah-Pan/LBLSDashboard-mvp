@@ -393,11 +393,11 @@ def generate_visualization(y, nudged_history, pred_history, **kwargs):
 
     fig = go.Figure(
         data=[
-            go.Scatter(x=x_axis, y=y_sorted, mode='markers', name='Original Score', marker=dict(color='lightgrey', size=6, opacity=0.5)),
+            go.Scatter(x=x_axis, y=y_sorted, mode='markers', name='Unnudged Performance', marker=dict(color='lightgrey', size=6, opacity=0.5)),
             go.Scatter(x=x_safe, y=initial_pred_safe, mode='markers', name='Prediction (Safe)', marker=dict(color='blue', size=8, opacity=0.3)),
             go.Scatter(x=x_risk, y=initial_pred_risk, mode='markers', name='Prediction (Risk)', marker=dict(color='blue', symbol='triangle-up', size=10, opacity=0.6, line=dict(width=1, color='darkblue'))),
-            go.Scatter(x=x_safe, y=initial_nudged_safe, mode='markers', name='Nudged y (Safe)', marker=dict(color='orange', size=6, opacity=0.3)),
-            go.Scatter(x=x_risk, y=initial_nudged_risk, mode='markers', name='Nudged y (Risk)', marker=dict(color='red', symbol='triangle-up', size=10, opacity=1.0, line=dict(width=1, color='darkred')))
+            go.Scatter(x=x_safe, y=initial_nudged_safe, mode='markers', name='Nudged Performance (Safe)', marker=dict(color='orange', size=6, opacity=0.3)),
+            go.Scatter(x=x_risk, y=initial_nudged_risk, mode='markers', name='Nudged Performance (Risk)', marker=dict(color='red', symbol='triangle-up', size=10, opacity=1.0, line=dict(width=1, color='darkred')))
         ],
         layout=go.Layout(
             width=1000, 
