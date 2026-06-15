@@ -120,7 +120,7 @@ STRATEGY_INFO= {
         **Example:** A student sees a prediction with high uncertainty (wide prediction interval) and hesitates to change study habits.
 
         **Formula for Iteration t+1:**  
-        $\tilde{y}_{t+1} = y_t + \frac{w}{\sigma^2} + \mathcal{E}_{noise}$
+        $\tilde{y}_{t+1} = y_t + \frac{w}{\sigma_{F_{t+1}}^2} + \mathcal{E}_{noise}$
         '''
     }
 
