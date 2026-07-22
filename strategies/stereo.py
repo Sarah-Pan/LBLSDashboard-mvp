@@ -135,7 +135,7 @@ CONSTRUCTS_DB = {
 }
 
 PARAMS = {'sigma': {
-        'label': r'Noise Level ($\sigma$)', 
+        'label': r'Noise Level ($\mathcal{E}_{noise}$)', 
         'min': 0.0, 
         'max': 1.7,
         'step': 0.01, 
